@@ -1,5 +1,6 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react'
 import { supabase } from '../lib/supabase'
+import PersonAvatar from '../components/PersonAvatar'
 import './asset-profile.css'
 
 type Asset={
@@ -7,7 +8,7 @@ type Asset={
   manufacturer:string|null;model:string|null;serial_number:string|null;year:number|null;
   status:string;criticality:number;odometer_km:number|null;hour_meter:number|null;notes:string|null
 }
-type Person={id:string;full_name:string|null;email:string|null;position_title:string|null;role:string}
+type Person={id:string;full_name:string|null;email:string|null;position_title:string|null;role:string;avatar_url:string|null}
 type Assignment={id:string;user_id:string;responsibility:string;starts_on:string;ends_on:string|null;active:boolean}
 type HistoryRow={asset_id:string;event_at:string;event_type:string;title:string;detail:string;source_id:string}
 type DocumentRow={id:string;title:string;document_type:string;storage_path:string;version:string|null;manufacturer:string|null;effective_date:string|null;created_at:string}
@@ -29,7 +30,7 @@ export default function AssetProfileModal({asset,role,onClose}:Props){
   async function load(){
     setLoading(true)
     const [{data:p},{data:a},{data:h},{data:d}]=await Promise.all([
-      supabase.from('profiles').select('id,full_name,email,position_title,role').eq('active',true).order('full_name'),
+      supabase.from('profiles').select('id,full_name,email,position_title,role,avatar_url').eq('active',true).order('full_name'),
       supabase.from('asset_assignments').select('id,user_id,responsibility,starts_on,ends_on,active').eq('asset_id',asset.id).order('created_at',{ascending:false}),
       supabase.from('asset_history').select('asset_id,event_at,event_type,title,detail,source_id').eq('asset_id',asset.id).order('event_at',{ascending:false}).limit(100),
       supabase.from('documents').select('id,title,document_type,storage_path,version,manufacturer,effective_date,created_at').eq('asset_id',asset.id).eq('active',true).order('created_at',{ascending:false})
@@ -38,8 +39,11 @@ export default function AssetProfileModal({asset,role,onClose}:Props){
   }
   useEffect(()=>{load()},[asset.id])
 
-  function personName(id:string){const p=people.find(x=>x.id===id);return p?.full_name||p?.email||'Assigned user'}
+  function personFor(id:string){return people.find(x=>x.id===id)||null}
+  function personName(id:string){const p=personFor(id);return p?.full_name||p?.email||'Assigned user'}
   const activeAssignments=useMemo(()=>assignments.filter(a=>a.active),[assignments])
+  const primary=activeAssignments.find(a=>a.responsibility==='primary')
+  const primaryPerson=primary?personFor(primary.user_id):null
 
   async function addAssignment(e:FormEvent){
     e.preventDefault();if(!canAssign||!personId)return
@@ -65,6 +69,7 @@ export default function AssetProfileModal({asset,role,onClose}:Props){
   return <div className="modal-backdrop asset-profile-backdrop" onClick={onClose}>
     <section className="asset-profile-card" onClick={e=>e.stopPropagation()}>
       <div className="form-title"><div><span className="eyebrow">Asset dossier</span><h2>{asset.asset_code} — {asset.name}</h2><p className="muted">Technical identity, accountability, controlled documents and maintenance history in one place.</p></div><button className="icon-button" onClick={onClose}>×</button></div>
+      <div className="asset-owner-banner"><PersonAvatar avatarPath={primaryPerson?.avatar_url} name={primaryPerson?.full_name||primaryPerson?.email||'Unassigned'} size="lg"/><div><span className="eyebrow">Primary responsible</span><h3>{primaryPerson?personName(primaryPerson.id):'Unassigned'}</h3><p>{primaryPerson?.position_title||'Assign a responsible person for maintenance accountability.'}</p></div></div>
       <div className="asset-profile-summary">
         <span><small>Category</small><b>{asset.asset_category.replaceAll('_',' ')}</b></span>
         <span><small>Manufacturer / model</small><b>{[asset.manufacturer,asset.model].filter(Boolean).join(' · ')||'Pending'}</b></span>
@@ -76,7 +81,7 @@ export default function AssetProfileModal({asset,role,onClose}:Props){
       {message&&<div className={message.includes('added')||message.includes('ended')?'success-box':'error-box'}>{message}</div>}
       {loading?<div className="loading-panel">Loading asset dossier…</div>:<div className="asset-profile-grid">
         <div className="profile-panel"><div className="section-heading small-heading"><div><span className="eyebrow">Accountability</span><h3>Asset team</h3></div><span className="count-chip">{activeAssignments.length} active</span></div>
-          <div className="access-list">{activeAssignments.length===0?<div className="empty-table compact">No active asset responsibilities.</div>:activeAssignments.map(a=><div className="access-card" key={a.id}><div><strong>{personName(a.user_id)}</strong><small>{a.responsibility.replaceAll('_',' ')} · since {a.starts_on}</small></div>{canAssign&&a.responsibility!=='primary'&&<button className="icon-button small" onClick={()=>endAssignment(a)}>×</button>}</div>)}</div>
+          <div className="access-list">{activeAssignments.length===0?<div className="empty-table compact">No active asset responsibilities.</div>:activeAssignments.map(a=>{const p=personFor(a.user_id);return <div className="access-card" key={a.id}><div className="person-cell"><PersonAvatar avatarPath={p?.avatar_url} name={p?.full_name||p?.email} size="sm"/><span><strong>{personName(a.user_id)}</strong><small>{a.responsibility.replaceAll('_',' ')} · since {a.starts_on}</small></span></div>{canAssign&&a.responsibility!=='primary'&&<button className="icon-button small" onClick={()=>endAssignment(a)}>×</button>}</div>})}</div>
           {canAssign&&<form className="access-form" onSubmit={addAssignment}><label>Person<select required value={personId} onChange={e=>setPersonId(e.target.value)}><option value="">Select person</option>{people.map(p=><option key={p.id} value={p.id}>{p.full_name||p.email} — {p.position_title||p.role.replaceAll('_',' ')}</option>)}</select></label><label>Responsibility<select value={responsibility} onChange={e=>setResponsibility(e.target.value)}>{teamRoles.map(r=><option key={r} value={r}>{r}</option>)}</select></label><button className="primary-button action-button">Add responsibility</button></form>}
         </div>
 
