@@ -1,5 +1,5 @@
 .person-avatar{display:inline-grid;place-items:center;overflow:hidden;border-radius:50%;background:#f4c430;color:#171717;font-weight:900;flex:0 0 auto;border:2px solid #fff;box-shadow:0 0 0 1px #d8d8d3}
-.person-avatar img{width:100%;height:100%;object-fit:cover;display:block}
+.person-avatar img{width:100%;height:100%;object-fit:cover;object-position:50% 38%;display:block}
 .person-avatar-sm{width:38px;height:38px;font-size:.72rem}
 .person-avatar-md{width:52px;height:52px;font-size:.9rem}
 .person-avatar-lg{width:78px;height:78px;font-size:1.3rem}
