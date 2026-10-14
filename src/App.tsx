@@ -206,7 +206,7 @@ function AppShell({ session }: { session: Session }) {
   }, [session.user.id])
 
   const activeTitle = useMemo(() => sections.find(([key]) => key === section)?.[1] || 'Dashboard', [section])
-  const brandLabel = section === 'dashboard' ? 'MAINTENANCE 360' : 'MAINTENANCE 360'
+  const brandLabel = 'MAINTENANCE 360'
 
   async function signOut() { await supabase.auth.signOut() }
 
@@ -216,7 +216,7 @@ function AppShell({ session }: { session: Session }) {
         <div className="sidebar-brand"><Brand label={brandLabel} /></div>
         <nav>
           {sections.map(([key, label, number]) => (
-            <button key={key} className={section === key ? 'active' : ''} onClick={() => { setSection(key); setMenuOpen(false) }}>
+            <button key={key} className={section === key ? 'active' : ''} onClick={() => { setSection(key); setMenuOpen(false); setManualOpen(false) }}>
               <span className="nav-number">{number}</span><span>{label}</span>
             </button>
           ))}
@@ -240,7 +240,7 @@ function AppShell({ session }: { session: Session }) {
           {section === 'dashboard' ? <Dashboard units={units} /> : <PlaceholderSection title={activeTitle} section={section} />}
         </section>
       </main>
-      <ManualDrawer manual={manuals[section] || null} onClose={() => setManualOpen(false)} />
+      <ManualDrawer manual={manualOpen ? (manuals[section] || null) : null} onClose={() => setManualOpen(false)} />
     </div>
   )
 }
