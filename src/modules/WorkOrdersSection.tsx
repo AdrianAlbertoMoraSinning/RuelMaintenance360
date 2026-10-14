@@ -2,6 +2,7 @@ import { FormEvent, useEffect, useMemo, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import type { BusinessUnit } from './AssetsSection'
 import PersonAvatar from '../components/PersonAvatar'
+import WorkOrderResources from './WorkOrderResources'
 
 type AssetLite = { id:string; business_unit_id:string; asset_code:string; name:string }
 type Person={id:string;full_name:string|null;email:string|null;position_title:string|null;avatar_url:string|null;active:boolean}
@@ -31,10 +32,12 @@ export default function WorkOrdersSection({ units, userId, role }:Props) {
   const canCreate = ['super_admin','corporate_manager','unit_supervisor','technician','operator'].includes(role)
   const canManage=['super_admin','corporate_manager','unit_supervisor','technician'].includes(role)
 
+  const orderSelect='id,work_order_number,business_unit_id,asset_id,type,status,priority,title,problem_description,diagnosis,corrective_action,assigned_to,scheduled_for,created_at,started_at,completed_at,downtime_hours,labour_hours,labour_cost,parts_cost,vendor_cost,other_cost,meter_km,meter_hours,safety_notes'
+
   async function load(){
     setLoading(true)
     const [{data:o},{data:a},{data:p}] = await Promise.all([
-      supabase.from('work_orders').select('id,work_order_number,business_unit_id,asset_id,type,status,priority,title,problem_description,diagnosis,corrective_action,assigned_to,scheduled_for,created_at,started_at,completed_at,downtime_hours,labour_hours,labour_cost,parts_cost,vendor_cost,other_cost,meter_km,meter_hours,safety_notes').order('created_at',{ascending:false}),
+      supabase.from('work_orders').select(orderSelect).order('created_at',{ascending:false}),
       supabase.from('assets').select('id,business_unit_id,asset_code,name').order('asset_code'),
       supabase.from('profiles').select('id,full_name,email,position_title,avatar_url,active').eq('active',true).order('full_name')
     ])
@@ -64,8 +67,7 @@ export default function WorkOrdersSection({ units, userId, role }:Props) {
     setSaving(false)
   }
 
-  function openDetail(order:WorkOrder){
-    setDetail(order)
+  function hydrateDetailForm(order:WorkOrder){
     setDetailForm({
       assigned_to:order.assigned_to||'',priority:order.priority,diagnosis:order.diagnosis||'',corrective_action:order.corrective_action||'',
       downtime_hours:String(order.downtime_hours||0),labour_hours:String(order.labour_hours||0),labour_cost:String(order.labour_cost||0),
@@ -74,17 +76,26 @@ export default function WorkOrdersSection({ units, userId, role }:Props) {
     })
   }
 
+  function openDetail(order:WorkOrder){setDetail(order);hydrateDetailForm(order)}
+
+  async function refreshDetail(){
+    if(!detail)return
+    const {data}=await supabase.from('work_orders').select(orderSelect).eq('id',detail.id).single()
+    await load()
+    if(data){setDetail(data as WorkOrder);hydrateDetailForm(data as WorkOrder)}
+  }
+
   async function saveDetail(){
     if(!detail||!canManage)return
     setSaving(true);setMessage('')
     const payload={
       assigned_to:detailForm.assigned_to||null,priority:detailForm.priority,diagnosis:detailForm.diagnosis.trim()||null,
       corrective_action:detailForm.corrective_action.trim()||null,downtime_hours:Number(detailForm.downtime_hours||0),labour_hours:Number(detailForm.labour_hours||0),
-      labour_cost:Number(detailForm.labour_cost||0),parts_cost:Number(detailForm.parts_cost||0),vendor_cost:Number(detailForm.vendor_cost||0),other_cost:Number(detailForm.other_cost||0),
+      labour_cost:Number(detailForm.labour_cost||0),other_cost:Number(detailForm.other_cost||0),
       meter_km:detailForm.meter_km?Number(detailForm.meter_km):null,meter_hours:detailForm.meter_hours?Number(detailForm.meter_hours):null,safety_notes:detailForm.safety_notes.trim()||null
     }
     const {error}=await supabase.from('work_orders').update(payload).eq('id',detail.id)
-    if(error)setMessage(error.message);else{setMessage('Work order details saved.');await load();setDetail(prev=>prev?{...prev,...payload}:prev)}
+    if(error)setMessage(error.message);else{setMessage('Work order details saved.');await refreshDetail()}
     setSaving(false)
   }
 
@@ -97,14 +108,14 @@ export default function WorkOrdersSection({ units, userId, role }:Props) {
     if(status==='completed')payload.completed_at=new Date().toISOString()
     if(status!=='completed'&&detail.completed_at)payload.completed_at=null
     const {error}=await supabase.from('work_orders').update(payload).eq('id',detail.id)
-    if(error)setMessage(error.message);else{setMessage(`Work order moved to ${status.replaceAll('_',' ')}.`);await load();setDetail({...detail,...payload,status})}
+    if(error)setMessage(error.message);else{setMessage(`Work order moved to ${status.replaceAll('_',' ')}.`);await refreshDetail()}
     setSaving(false)
   }
 
   const totalCost=detailForm?['labour_cost','parts_cost','vendor_cost','other_cost'].reduce((s,k)=>s+Number(detailForm[k]||0),0):0
 
   return <div>
-    <div className="hero-row compact-hero"><div><span className="eyebrow">Execution Control</span><h1>Work Orders</h1><p className="muted">Corrective, preventive and predictive work with accountable ownership, diagnosis, downtime, cost and controlled closure.</p></div>{canCreate&&<button className="primary-button action-button" onClick={()=>setShowForm(!showForm)}>+ New work order</button>}</div>
+    <div className="hero-row compact-hero"><div><span className="eyebrow">Execution Control</span><h1>Work Orders</h1><p className="muted">Corrective, preventive and predictive work with accountable ownership, diagnosis, linked parts/vendors, downtime, cost and controlled closure.</p></div>{canCreate&&<button className="primary-button action-button" onClick={()=>setShowForm(!showForm)}>+ New work order</button>}</div>
     {message&&<div className={/successfully|saved|moved/i.test(message)?'success-box':'error-box'}>{message}</div>}
     {showForm&&<form className="data-form" onSubmit={createOrder}>
       <div className="form-title"><div><span className="eyebrow">Maintenance request</span><h2>Create work order</h2></div><button type="button" className="icon-button" onClick={()=>setShowForm(false)}>×</button></div>
@@ -137,11 +148,15 @@ export default function WorkOrdersSection({ units, userId, role }:Props) {
         <label className="span-2">Corrective action / work performed<textarea disabled={!canManage} rows={3} value={detailForm.corrective_action} onChange={e=>setDetailForm({...detailForm,corrective_action:e.target.value})}/></label>
         <label className="span-2">Safety / LOTO notes<textarea disabled={!canManage} rows={2} value={detailForm.safety_notes} onChange={e=>setDetailForm({...detailForm,safety_notes:e.target.value})}/></label>
         <label>Labour cost<input disabled={!canManage} type="number" min="0" step="0.01" value={detailForm.labour_cost} onChange={e=>setDetailForm({...detailForm,labour_cost:e.target.value})}/></label>
-        <label>Parts cost<input disabled={!canManage} type="number" min="0" step="0.01" value={detailForm.parts_cost} onChange={e=>setDetailForm({...detailForm,parts_cost:e.target.value})}/></label>
-        <label>Vendor cost<input disabled={!canManage} type="number" min="0" step="0.01" value={detailForm.vendor_cost} onChange={e=>setDetailForm({...detailForm,vendor_cost:e.target.value})}/></label>
+        <label>Parts cost<input disabled value={detailForm.parts_cost}/><small className="field-help">Calculated from inventory issues/returns linked below.</small></label>
+        <label>Vendor cost<input disabled value={detailForm.vendor_cost}/><small className="field-help">Calculated from linked vendor invoice/quote values below.</small></label>
         <label>Other cost<input disabled={!canManage} type="number" min="0" step="0.01" value={detailForm.other_cost} onChange={e=>setDetailForm({...detailForm,other_cost:e.target.value})}/></label>
       </div>
-      {canManage&&<><div className="form-actions"><button className="secondary-outline" disabled={saving} onClick={saveDetail}>Save details</button></div><div className="wo-status-actions"><button onClick={()=>setStatus('in_progress')} disabled={saving||detail.status==='in_progress'}>Start / Resume</button><button onClick={()=>setStatus('waiting_parts')} disabled={saving}>Waiting parts</button><button onClick={()=>setStatus('waiting_vendor')} disabled={saving}>Waiting vendor</button><button className="primary-button" onClick={()=>setStatus('completed')} disabled={saving||detail.status==='completed'}>Complete work order</button></div></>}
+      {canManage&&<div className="form-actions"><button className="secondary-outline" disabled={saving} onClick={saveDetail}>Save details</button></div>}
+
+      <WorkOrderResources workOrderId={detail.id} businessUnitId={detail.business_unit_id} userId={userId} canManage={canManage} onChanged={refreshDetail}/>
+
+      {canManage&&<div className="wo-status-actions"><button onClick={()=>setStatus('in_progress')} disabled={saving||detail.status==='in_progress'}>Start / Resume</button><button onClick={()=>setStatus('waiting_parts')} disabled={saving}>Waiting parts</button><button onClick={()=>setStatus('waiting_vendor')} disabled={saving}>Waiting vendor</button><button className="primary-button" onClick={()=>setStatus('completed')} disabled={saving||detail.status==='completed'}>Complete work order</button></div>}
     </section></div>}
   </div>
 }
