@@ -1,32 +1,46 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import type { BusinessUnit } from './AssetsSection'
+import PersonAvatar from '../components/PersonAvatar'
 
 type AssetLite = { id:string; business_unit_id:string; asset_code:string; name:string }
+type Person={id:string;full_name:string|null;email:string|null;position_title:string|null;avatar_url:string|null;active:boolean}
 type WorkOrder = {
   id:string; work_order_number:number; business_unit_id:string; asset_id:string; type:string; status:string; priority:string;
-  title:string; problem_description:string|null; assigned_to:string|null; scheduled_for:string|null; created_at:string;
+  title:string; problem_description:string|null; diagnosis:string|null; corrective_action:string|null; assigned_to:string|null;
+  scheduled_for:string|null; created_at:string; started_at:string|null; completed_at:string|null;
+  downtime_hours:number; labour_hours:number; labour_cost:number; parts_cost:number; vendor_cost:number; other_cost:number;
+  meter_km:number|null; meter_hours:number|null; safety_notes:string|null;
 }
 type Props = { units:BusinessUnit[]; userId:string; role:string }
+
+const emptyCreate={ business_unit_id:'',asset_id:'',type:'corrective',priority:'medium',title:'',problem_description:'',scheduled_for:'',assigned_to:'' }
 
 export default function WorkOrdersSection({ units, userId, role }:Props) {
   const [orders,setOrders] = useState<WorkOrder[]>([])
   const [assets,setAssets] = useState<AssetLite[]>([])
+  const [people,setPeople]=useState<Person[]>([])
   const [showForm,setShowForm] = useState(false)
+  const [detail,setDetail]=useState<WorkOrder|null>(null)
+  const [detailForm,setDetailForm]=useState<any>({})
   const [loading,setLoading] = useState(true)
+  const [saving,setSaving]=useState(false)
   const [message,setMessage] = useState('')
   const [filter,setFilter] = useState('open')
-  const [form,setForm] = useState({ business_unit_id:'',asset_id:'',type:'corrective',priority:'medium',title:'',problem_description:'',scheduled_for:'' })
+  const [form,setForm] = useState(emptyCreate)
   const canCreate = ['super_admin','corporate_manager','unit_supervisor','technician','operator'].includes(role)
+  const canManage=['super_admin','corporate_manager','unit_supervisor','technician'].includes(role)
 
   async function load(){
     setLoading(true)
-    const [{data:o},{data:a}] = await Promise.all([
-      supabase.from('work_orders').select('id,work_order_number,business_unit_id,asset_id,type,status,priority,title,problem_description,assigned_to,scheduled_for,created_at').order('created_at',{ascending:false}),
-      supabase.from('assets').select('id,business_unit_id,asset_code,name').order('asset_code')
+    const [{data:o},{data:a},{data:p}] = await Promise.all([
+      supabase.from('work_orders').select('id,work_order_number,business_unit_id,asset_id,type,status,priority,title,problem_description,diagnosis,corrective_action,assigned_to,scheduled_for,created_at,started_at,completed_at,downtime_hours,labour_hours,labour_cost,parts_cost,vendor_cost,other_cost,meter_km,meter_hours,safety_notes').order('created_at',{ascending:false}),
+      supabase.from('assets').select('id,business_unit_id,asset_code,name').order('asset_code'),
+      supabase.from('profiles').select('id,full_name,email,position_title,avatar_url,active').eq('active',true).order('full_name')
     ])
     if(o) setOrders(o as WorkOrder[])
     if(a) setAssets(a as AssetLite[])
+    setPeople((p||[]) as Person[])
     setLoading(false)
   }
   useEffect(()=>{load()},[])
@@ -35,46 +49,99 @@ export default function WorkOrdersSection({ units, userId, role }:Props) {
   const formAssets = assets.filter(a=>!form.business_unit_id || a.business_unit_id===form.business_unit_id)
   const assetLabel = (id:string)=>{ const a=assets.find(x=>x.id===id); return a ? `${a.asset_code} · ${a.name}` : 'Asset' }
   const unitLabel = (id:string)=>units.find(u=>u.id===id)?.name || 'Business unit'
+  const personFor=(id:string|null)=>people.find(p=>p.id===id)||null
 
   async function createOrder(e:FormEvent){
-    e.preventDefault(); setMessage('')
+    e.preventDefault(); setMessage('');setSaving(true)
     const { error } = await supabase.from('work_orders').insert({
       business_unit_id:form.business_unit_id, asset_id:form.asset_id, type:form.type, priority:form.priority,
       title:form.title.trim(), problem_description:form.problem_description.trim() || null,
-      requested_by:userId, scheduled_for:form.scheduled_for ? new Date(form.scheduled_for).toISOString() : null
+      requested_by:userId,assigned_to:form.assigned_to||null, scheduled_for:form.scheduled_for ? new Date(form.scheduled_for).toISOString() : null,
+      status:form.assigned_to?'assigned':'open'
     })
     if(error) setMessage(error.message)
-    else { setMessage('Work order created successfully.'); setShowForm(false); setForm({business_unit_id:'',asset_id:'',type:'corrective',priority:'medium',title:'',problem_description:'',scheduled_for:''}); await load() }
+    else { setMessage('Work order created successfully.'); setShowForm(false); setForm(emptyCreate); await load() }
+    setSaving(false)
   }
 
-  async function advance(order:WorkOrder){
-    const next:Record<string,string> = {open:'assigned',assigned:'in_progress',in_progress:'completed',waiting_parts:'in_progress',waiting_vendor:'in_progress'}
-    const status = next[order.status]
-    if(!status) return
-    const payload:any = {status}
-    if(status==='in_progress') payload.started_at = new Date().toISOString()
-    if(status==='completed') payload.completed_at = new Date().toISOString()
-    const {error}=await supabase.from('work_orders').update(payload).eq('id',order.id)
-    if(error) setMessage(error.message); else await load()
+  function openDetail(order:WorkOrder){
+    setDetail(order)
+    setDetailForm({
+      assigned_to:order.assigned_to||'',priority:order.priority,diagnosis:order.diagnosis||'',corrective_action:order.corrective_action||'',
+      downtime_hours:String(order.downtime_hours||0),labour_hours:String(order.labour_hours||0),labour_cost:String(order.labour_cost||0),
+      parts_cost:String(order.parts_cost||0),vendor_cost:String(order.vendor_cost||0),other_cost:String(order.other_cost||0),
+      meter_km:order.meter_km?.toString()||'',meter_hours:order.meter_hours?.toString()||'',safety_notes:order.safety_notes||''
+    })
   }
+
+  async function saveDetail(){
+    if(!detail||!canManage)return
+    setSaving(true);setMessage('')
+    const payload={
+      assigned_to:detailForm.assigned_to||null,priority:detailForm.priority,diagnosis:detailForm.diagnosis.trim()||null,
+      corrective_action:detailForm.corrective_action.trim()||null,downtime_hours:Number(detailForm.downtime_hours||0),labour_hours:Number(detailForm.labour_hours||0),
+      labour_cost:Number(detailForm.labour_cost||0),parts_cost:Number(detailForm.parts_cost||0),vendor_cost:Number(detailForm.vendor_cost||0),other_cost:Number(detailForm.other_cost||0),
+      meter_km:detailForm.meter_km?Number(detailForm.meter_km):null,meter_hours:detailForm.meter_hours?Number(detailForm.meter_hours):null,safety_notes:detailForm.safety_notes.trim()||null
+    }
+    const {error}=await supabase.from('work_orders').update(payload).eq('id',detail.id)
+    if(error)setMessage(error.message);else{setMessage('Work order details saved.');await load();setDetail(prev=>prev?{...prev,...payload}:prev)}
+    setSaving(false)
+  }
+
+  async function setStatus(status:string){
+    if(!detail||!canManage)return
+    if(status==='completed'&&detail.type==='corrective'&&(!detailForm.diagnosis.trim()||!detailForm.corrective_action.trim())){setMessage('Corrective work orders require diagnosis and corrective action before completion.');return}
+    setSaving(true);setMessage('')
+    const payload:any={status}
+    if(status==='in_progress'&&!detail.started_at)payload.started_at=new Date().toISOString()
+    if(status==='completed')payload.completed_at=new Date().toISOString()
+    if(status!=='completed'&&detail.completed_at)payload.completed_at=null
+    const {error}=await supabase.from('work_orders').update(payload).eq('id',detail.id)
+    if(error)setMessage(error.message);else{setMessage(`Work order moved to ${status.replaceAll('_',' ')}.`);await load();setDetail({...detail,...payload,status})}
+    setSaving(false)
+  }
+
+  const totalCost=detailForm?['labour_cost','parts_cost','vendor_cost','other_cost'].reduce((s,k)=>s+Number(detailForm[k]||0),0):0
 
   return <div>
-    <div className="hero-row compact-hero"><div><span className="eyebrow">Execution Control</span><h1>Work Orders</h1><p className="muted">Corrective, preventive and predictive work with accountable ownership, time, cost and closure.</p></div>{canCreate&&<button className="primary-button action-button" onClick={()=>setShowForm(!showForm)}>+ New work order</button>}</div>
-    {message&&<div className={message.includes('successfully')?'success-box':'error-box'}>{message}</div>}
+    <div className="hero-row compact-hero"><div><span className="eyebrow">Execution Control</span><h1>Work Orders</h1><p className="muted">Corrective, preventive and predictive work with accountable ownership, diagnosis, downtime, cost and controlled closure.</p></div>{canCreate&&<button className="primary-button action-button" onClick={()=>setShowForm(!showForm)}>+ New work order</button>}</div>
+    {message&&<div className={/successfully|saved|moved/i.test(message)?'success-box':'error-box'}>{message}</div>}
     {showForm&&<form className="data-form" onSubmit={createOrder}>
       <div className="form-title"><div><span className="eyebrow">Maintenance request</span><h2>Create work order</h2></div><button type="button" className="icon-button" onClick={()=>setShowForm(false)}>×</button></div>
       <div className="form-grid">
         <label>Business unit<select required value={form.business_unit_id} onChange={e=>setForm({...form,business_unit_id:e.target.value,asset_id:''})}><option value="">Select unit</option>{units.map(u=><option key={u.id} value={u.id}>{u.name}</option>)}</select></label>
         <label>Asset<select required value={form.asset_id} onChange={e=>setForm({...form,asset_id:e.target.value})}><option value="">Select asset</option>{formAssets.map(a=><option key={a.id} value={a.id}>{a.asset_code} · {a.name}</option>)}</select></label>
+        <label>Assigned to<select value={form.assigned_to} onChange={e=>setForm({...form,assigned_to:e.target.value})}><option value="">Unassigned</option>{people.map(p=><option key={p.id} value={p.id}>{p.full_name||p.email} — {p.position_title||'personnel'}</option>)}</select></label>
         <label>Type<select value={form.type} onChange={e=>setForm({...form,type:e.target.value})}><option value="corrective">Corrective</option><option value="preventive">Preventive</option><option value="predictive">Predictive</option><option value="inspection">Inspection</option></select></label>
         <label>Priority<select value={form.priority} onChange={e=>setForm({...form,priority:e.target.value})}><option value="low">Low</option><option value="medium">Medium</option><option value="high">High</option><option value="critical">Critical</option></select></label>
+        <label>Scheduled for<input type="datetime-local" value={form.scheduled_for} onChange={e=>setForm({...form,scheduled_for:e.target.value})}/></label>
         <label className="span-2">Title<input required value={form.title} onChange={e=>setForm({...form,title:e.target.value})} placeholder="Describe the maintenance task" /></label>
         <label className="span-2">Problem / scope<textarea rows={4} value={form.problem_description} onChange={e=>setForm({...form,problem_description:e.target.value})}/></label>
-        <label>Scheduled for<input type="datetime-local" value={form.scheduled_for} onChange={e=>setForm({...form,scheduled_for:e.target.value})}/></label>
       </div>
-      <div className="form-actions"><button type="button" className="secondary-outline" onClick={()=>setShowForm(false)}>Cancel</button><button className="primary-button action-button">Create work order</button></div>
+      <div className="form-actions"><button type="button" className="secondary-outline" onClick={()=>setShowForm(false)}>Cancel</button><button className="primary-button action-button" disabled={saving}>{saving?'Saving…':'Create work order'}</button></div>
     </form>}
     <div className="toolbar"><select value={filter} onChange={e=>setFilter(e.target.value)}><option value="open">Active work</option><option value="all">All work orders</option><option value="completed">Completed</option><option value="waiting_parts">Waiting parts</option><option value="waiting_vendor">Waiting vendor</option></select><span className="count-chip">{visible.length} orders</span></div>
-    {loading?<div className="loading-panel">Loading work orders…</div>:visible.length===0?<div className="empty-table">No work orders match this view.</div>:<div className="table-wrap"><table className="data-table"><thead><tr><th>WO</th><th>Asset</th><th>Task</th><th>Type</th><th>Priority</th><th>Status</th><th></th></tr></thead><tbody>{visible.map(o=><tr key={o.id}><td><strong>#{String(o.work_order_number).padStart(5,'0')}</strong><small>{unitLabel(o.business_unit_id)}</small></td><td>{assetLabel(o.asset_id)}</td><td><strong>{o.title}</strong><small>{o.problem_description||'No additional scope entered'}</small></td><td>{o.type}</td><td><span className={`priority-pill ${o.priority}`}>{o.priority}</span></td><td><span className={`status-pill ${o.status}`}>{o.status.replaceAll('_',' ')}</span></td><td>{!['completed','cancelled'].includes(o.status)&&<button className="secondary-outline mini" onClick={()=>advance(o)}>Advance</button>}</td></tr>)}</tbody></table></div>}
+    {loading?<div className="loading-panel">Loading work orders…</div>:visible.length===0?<div className="empty-table">No work orders match this view.</div>:<div className="table-wrap"><table className="data-table"><thead><tr><th>WO</th><th>Asset</th><th>Task</th><th>Assigned</th><th>Priority</th><th>Status</th><th></th></tr></thead><tbody>{visible.map(o=>{const p=personFor(o.assigned_to);return <tr key={o.id}><td><strong>#{String(o.work_order_number).padStart(5,'0')}</strong><small>{unitLabel(o.business_unit_id)}</small></td><td>{assetLabel(o.asset_id)}</td><td><strong>{o.title}</strong><small>{o.problem_description||'No additional scope entered'}</small></td><td>{p?<div className="person-cell"><PersonAvatar avatarPath={p.avatar_url} name={p.full_name||p.email} size="sm"/><span><strong>{p.full_name||p.email}</strong><small>{p.position_title||'Assigned personnel'}</small></span></div>:'Unassigned'}</td><td><span className={`priority-pill ${o.priority}`}>{o.priority}</span></td><td><span className={`status-pill ${o.status}`}>{o.status.replaceAll('_',' ')}</span></td><td><button className="secondary-outline mini" onClick={()=>openDetail(o)}>Open</button></td></tr>})}</tbody></table></div>}
+
+    {detail&&<div className="modal-backdrop" onClick={()=>setDetail(null)}><section className="workorder-detail-card" onClick={e=>e.stopPropagation()}>
+      <div className="form-title"><div><span className="eyebrow">Work order #{String(detail.work_order_number).padStart(5,'0')}</span><h2>{detail.title}</h2><p className="muted">{assetLabel(detail.asset_id)} · {unitLabel(detail.business_unit_id)}</p></div><button className="icon-button" onClick={()=>setDetail(null)}>×</button></div>
+      <div className="summary-strip"><span><b>{detail.status.replaceAll('_',' ')}</b> {detail.type} · {detail.priority}</span><span><b>${totalCost.toFixed(2)}</b> recorded cost · <b>{Number(detailForm.downtime_hours||0).toFixed(1)} h</b> downtime</span></div>
+      <div className="form-grid wo-detail-grid">
+        <label>Assigned to<select disabled={!canManage} value={detailForm.assigned_to} onChange={e=>setDetailForm({...detailForm,assigned_to:e.target.value})}><option value="">Unassigned</option>{people.map(p=><option key={p.id} value={p.id}>{p.full_name||p.email}</option>)}</select></label>
+        <label>Priority<select disabled={!canManage} value={detailForm.priority} onChange={e=>setDetailForm({...detailForm,priority:e.target.value})}><option value="low">Low</option><option value="medium">Medium</option><option value="high">High</option><option value="critical">Critical</option></select></label>
+        <label>Downtime hours<input disabled={!canManage} type="number" min="0" step="0.1" value={detailForm.downtime_hours} onChange={e=>setDetailForm({...detailForm,downtime_hours:e.target.value})}/></label>
+        <label>Labour hours<input disabled={!canManage} type="number" min="0" step="0.1" value={detailForm.labour_hours} onChange={e=>setDetailForm({...detailForm,labour_hours:e.target.value})}/></label>
+        <label>Meter hours<input disabled={!canManage} type="number" min="0" step="0.1" value={detailForm.meter_hours} onChange={e=>setDetailForm({...detailForm,meter_hours:e.target.value})}/></label>
+        <label>Meter km<input disabled={!canManage} type="number" min="0" step="1" value={detailForm.meter_km} onChange={e=>setDetailForm({...detailForm,meter_km:e.target.value})}/></label>
+        <label className="span-2">Diagnosis<textarea disabled={!canManage} rows={3} value={detailForm.diagnosis} onChange={e=>setDetailForm({...detailForm,diagnosis:e.target.value})}/></label>
+        <label className="span-2">Corrective action / work performed<textarea disabled={!canManage} rows={3} value={detailForm.corrective_action} onChange={e=>setDetailForm({...detailForm,corrective_action:e.target.value})}/></label>
+        <label className="span-2">Safety / LOTO notes<textarea disabled={!canManage} rows={2} value={detailForm.safety_notes} onChange={e=>setDetailForm({...detailForm,safety_notes:e.target.value})}/></label>
+        <label>Labour cost<input disabled={!canManage} type="number" min="0" step="0.01" value={detailForm.labour_cost} onChange={e=>setDetailForm({...detailForm,labour_cost:e.target.value})}/></label>
+        <label>Parts cost<input disabled={!canManage} type="number" min="0" step="0.01" value={detailForm.parts_cost} onChange={e=>setDetailForm({...detailForm,parts_cost:e.target.value})}/></label>
+        <label>Vendor cost<input disabled={!canManage} type="number" min="0" step="0.01" value={detailForm.vendor_cost} onChange={e=>setDetailForm({...detailForm,vendor_cost:e.target.value})}/></label>
+        <label>Other cost<input disabled={!canManage} type="number" min="0" step="0.01" value={detailForm.other_cost} onChange={e=>setDetailForm({...detailForm,other_cost:e.target.value})}/></label>
+      </div>
+      {canManage&&<><div className="form-actions"><button className="secondary-outline" disabled={saving} onClick={saveDetail}>Save details</button></div><div className="wo-status-actions"><button onClick={()=>setStatus('in_progress')} disabled={saving||detail.status==='in_progress'}>Start / Resume</button><button onClick={()=>setStatus('waiting_parts')} disabled={saving}>Waiting parts</button><button onClick={()=>setStatus('waiting_vendor')} disabled={saving}>Waiting vendor</button><button className="primary-button" onClick={()=>setStatus('completed')} disabled={saving||detail.status==='completed'}>Complete work order</button></div></>}
+    </section></div>}
   </div>
 }
