@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import type { BusinessUnit } from './AssetsSection'
+import './planning-capacity.css'
 
 type Asset={id:string;business_unit_id:string;asset_code:string;name:string}
 type Plan={id:string;asset_id:string;title:string;next_due_date:string|null;active:boolean;plan_type:string}
