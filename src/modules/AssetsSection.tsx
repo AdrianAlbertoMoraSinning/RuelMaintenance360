@@ -1,6 +1,7 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import AssetProfileModal from './AssetProfileModal'
+import PersonAvatar from '../components/PersonAvatar'
 
 export type BusinessUnit = {
   id: string
@@ -28,7 +29,7 @@ type Asset = {
   notes: string | null
 }
 
-type Person={id:string;full_name:string|null;email:string|null;role:string;position_title:string|null;personnel_category:string;active:boolean}
+type Person={id:string;full_name:string|null;email:string|null;role:string;position_title:string|null;personnel_category:string;active:boolean;avatar_url:string|null}
 type Assignment={id:string;asset_id:string;user_id:string;responsibility:string;active:boolean}
 type Category={id:string;code:string;name:string;description:string|null;sort_order:number;active:boolean}
 
@@ -65,7 +66,7 @@ export default function AssetsSection({ units, userId, role }: Props) {
     setLoading(true)
     const [{data:a,error},{data:p},{data:asg},{data:c}] = await Promise.all([
       supabase.from('assets').select('id,business_unit_id,asset_code,name,asset_category,manufacturer,model,serial_number,year,status,criticality,odometer_km,hour_meter,notes').order('asset_code'),
-      supabase.from('profiles').select('id,full_name,email,role,position_title,personnel_category,active').eq('active',true).order('full_name'),
+      supabase.from('profiles').select('id,full_name,email,role,position_title,personnel_category,active,avatar_url').eq('active',true).order('full_name'),
       supabase.from('asset_assignments').select('id,asset_id,user_id,responsibility,active').eq('active',true),
       supabase.from('asset_categories').select('id,code,name,description,sort_order,active').eq('active',true).order('sort_order').order('name')
     ])
@@ -79,8 +80,10 @@ export default function AssetsSection({ units, userId, role }: Props) {
   useEffect(() => { loadAssets() }, [])
 
   function primaryAssignment(assetId:string){return assignments.find(a=>a.asset_id===assetId&&a.responsibility==='primary'&&a.active)}
-  function personName(userId:string){const p=people.find(x=>x.id===userId);return p?.full_name||p?.email||'Assigned user'}
-  function responsibleName(assetId:string){const a=primaryAssignment(assetId);return a?personName(a.user_id):'Unassigned'}
+  function personFor(userId:string){return people.find(x=>x.id===userId)||null}
+  function personName(userId:string){const p=personFor(userId);return p?.full_name||p?.email||'Assigned user'}
+  function responsiblePerson(assetId:string){const a=primaryAssignment(assetId);return a?personFor(a.user_id):null}
+  function responsibleName(assetId:string){const p=responsiblePerson(assetId);return p?.full_name||p?.email||'Unassigned'}
   function categoryName(code:string){return categories.find(c=>c.code===code)?.name||code.replaceAll('_',' ')}
   function unitName(id: string) { return units.find((u) => u.id === id)?.name || 'Assigned unit' }
 
@@ -178,16 +181,16 @@ export default function AssetsSection({ units, userId, role }: Props) {
       <span className="count-chip">{visible.length} assets</span>
     </div>
 
-    {loading?<div className="loading-panel">Loading assets…</div>:visible.length===0?<div className="empty-table">No assets recorded for the current filter.</div>:<div className="table-wrap"><table className="data-table"><thead><tr><th>Asset</th><th>Business unit</th><th>Category / Equipment</th><th>Responsible</th><th>Status</th><th>Criticality</th><th>Meters</th><th></th></tr></thead><tbody>{visible.map(a=><tr key={a.id}>
+    {loading?<div className="loading-panel">Loading assets…</div>:visible.length===0?<div className="empty-table">No assets recorded for the current filter.</div>:<div className="table-wrap"><table className="data-table"><thead><tr><th>Asset</th><th>Business unit</th><th>Category / Equipment</th><th>Responsible</th><th>Status</th><th>Criticality</th><th>Meters</th><th></th></tr></thead><tbody>{visible.map(a=>{const responsible=responsiblePerson(a.id);return <tr key={a.id}>
       <td><strong>{a.asset_code}</strong><small>{a.name}</small></td>
       <td>{unitName(a.business_unit_id)}</td>
       <td><strong>{categoryName(a.asset_category)}</strong><small>{[a.manufacturer,a.model].filter(Boolean).join(' · ')||'Technical details pending'}</small></td>
-      <td><strong>{responsibleName(a.id)}</strong><small>{primaryAssignment(a.id)?'Primary accountability':'Assign a responsible person'}</small></td>
+      <td><div className="person-cell"><PersonAvatar avatarPath={responsible?.avatar_url} name={responsible?.full_name||responsible?.email||'Unassigned'} size="sm"/><span><strong>{responsibleName(a.id)}</strong><small>{responsible?responsible.position_title||'Primary accountability':'Assign a responsible person'}</small></span></div></td>
       <td><span className={`status-pill ${a.status}`}>{a.status.replaceAll('_',' ')}</span></td>
       <td><span className={`criticality c${a.criticality}`}>C{a.criticality}</span></td>
       <td><span className="meter-line">{a.hour_meter!=null?`${a.hour_meter} h`:'— h'}</span><small>{a.odometer_km!=null?`${a.odometer_km} km`:'— km'}</small></td>
       <td><div className="row-actions"><button className="secondary-outline mini" onClick={()=>setProfileAsset(a)}>Profile</button><button className="secondary-outline mini" onClick={()=>{setMeterAsset(a);setMeterType(['MIXER_TRUCK','CONCRETE_PUMP','VOLUMETRIC_TRUCK','SERVICE_TRUCK','PICKUP_TRUCK'].includes(a.asset_category)?'odometer_km':'hour_meter')}}>Meter</button>{canAssign&&<button className="secondary-outline mini" onClick={()=>{setResponsibleAsset(a);setResponsibleUserId(primaryAssignment(a.id)?.user_id||'')}}>Responsible</button>}</div></td>
-    </tr>)}</tbody></table></div>}
+    </tr>})}</tbody></table></div>}
 
     {profileAsset&&<AssetProfileModal asset={profileAsset} role={role} onClose={()=>{setProfileAsset(null);loadAssets()}}/>}
 
