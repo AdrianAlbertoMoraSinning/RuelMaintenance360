@@ -93,19 +93,37 @@ export default function AdminSection({units,role}:Props){
     setBusy(false)
   }
 
+  async function normalizeAvatar(file:File):Promise<Blob>{
+    const bitmap=await createImageBitmap(file,{imageOrientation:'from-image'})
+    const size=Math.min(bitmap.width,bitmap.height)
+    const sx=bitmap.width>bitmap.height?(bitmap.width-size)/2:0
+    const sy=bitmap.height>bitmap.width?(bitmap.height-size)*0.28:0
+    const canvas=document.createElement('canvas')
+    canvas.width=640;canvas.height=640
+    const ctx=canvas.getContext('2d')
+    if(!ctx){bitmap.close();throw new Error('Unable to process photo.')}
+    ctx.imageSmoothingEnabled=true
+    ctx.imageSmoothingQuality='high'
+    ctx.drawImage(bitmap,sx,sy,size,size,0,0,640,640)
+    bitmap.close()
+    const blob=await new Promise<Blob|null>(resolve=>canvas.toBlob(resolve,'image/jpeg',0.9))
+    if(!blob)throw new Error('Unable to prepare photo.')
+    return blob
+  }
+
   async function uploadAvatar(e:ChangeEvent<HTMLInputElement>,profile:Profile){
     const file=e.target.files?.[0];if(!file||!canAdmin)return
-    if(file.size>5*1024*1024){setMessage('Photo must be 5 MB or smaller.');return}
+    if(file.size>10*1024*1024){setMessage('Original photo must be 10 MB or smaller.');return}
     if(!['image/jpeg','image/png','image/webp'].includes(file.type)){setMessage('Photo must be JPG, PNG or WEBP.');return}
     setBusy(true);setMessage('')
-    const ext=file.name.split('.').pop()?.toLowerCase()||'jpg'
-    const path=`${profile.id}/avatar-${Date.now()}.${ext}`
     try{
-      const {error:uploadError}=await supabase.storage.from('ruel-avatars').upload(path,file,{upsert:false,contentType:file.type})
+      const normalized=await normalizeAvatar(file)
+      const path=`${profile.id}/avatar-${Date.now()}.jpg`
+      const {error:uploadError}=await supabase.storage.from('ruel-avatars').upload(path,normalized,{upsert:false,contentType:'image/jpeg',cacheControl:'3600'})
       if(uploadError)throw uploadError
       await adminAction({action:'update_profile',user_id:profile.id,avatar_url:path})
       if(profile.avatar_url&&!/^https?:\/\//i.test(profile.avatar_url)) await supabase.storage.from('ruel-avatars').remove([profile.avatar_url])
-      setMessage('Personnel photo updated.');await load()
+      setMessage('Personnel photo automatically cropped, resized and updated.');await load()
     }catch(err){setMessage(err instanceof Error?err.message:'Unable to upload photo.')}
     setBusy(false);e.target.value=''
   }
@@ -133,7 +151,7 @@ export default function AdminSection({units,role}:Props){
     </div>
 
     {!canAdmin&&<div className="warning-box"><strong>Read-only access</strong><p>Your current application role does not permit user administration.</p></div>}
-    {message&&<div className={/updated|saved|activated|deactivated|changed|photo/i.test(message)?'success-box':'error-box'}>{message}</div>}
+    {message&&<div className={/updated|saved|activated|deactivated|changed|photo|cropped/i.test(message)?'success-box':'error-box'}>{message}</div>}
 
     <div className="toolbar"><input className="search-input" placeholder="Search personnel, email, role…" value={search} onChange={e=>setSearch(e.target.value)}/><select value={categoryFilter} onChange={e=>setCategoryFilter(e.target.value)}><option value="all">All personnel categories</option>{personnelCategories.map(c=><option key={c} value={c}>{c.replaceAll('_',' ')}</option>)}</select><span className="count-chip">{filtered.length} users</span></div>
 
@@ -151,7 +169,7 @@ export default function AdminSection({units,role}:Props){
         <span className="eyebrow">Selected person</span>
         {!selectedProfile?<><h2>Select a user</h2><p className="muted">Choose a person to manage identity, photo and unit permissions.</p></>:<>
           <div className="admin-person-card"><PersonAvatar avatarPath={selectedProfile.avatar_url} name={selectedProfile.full_name||selectedProfile.email} size="lg"/><div><h2>{selectedProfile.full_name||selectedProfile.email}</h2><small>{selectedProfile.email||selectedProfile.phone}</small></div></div>
-          {canAdmin&&<label className="photo-upload">Personnel photo<input type="file" accept="image/jpeg,image/png,image/webp" disabled={busy} onChange={e=>uploadAvatar(e,selectedProfile)}/><small className="field-help">JPG, PNG or WEBP · max 5 MB. This photo identifies the person on assigned assets.</small></label>}
+          {canAdmin&&<label className="photo-upload">Personnel photo<input type="file" accept="image/jpeg,image/png,image/webp" disabled={busy} onChange={e=>uploadAvatar(e,selectedProfile)}/><small className="field-help">Upload a normal portrait or landscape photo. The system automatically rotates, crops, centers and resizes it to a standardized 640×640 personnel image.</small></label>}
           <div className="detail-list"><span>Position <b>{selectedProfile.position_title||'Not assigned'}</b></span><span>Category <b>{selectedProfile.personnel_category.replaceAll('_',' ')}</b></span><span>System role <b>{selectedProfile.role.replaceAll('_',' ')}</b></span><span>Account <b>{selectedProfile.active?'Active':'Inactive / sign-in blocked'}</b></span></div>
           <div className="section-heading small-heading"><div><span className="eyebrow">Business unit access</span></div></div>
           <div className="access-list">{selectedAccess.length===0?<div className="empty-table compact">No explicit unit assignments. Corporate roles may still have global access.</div>:selectedAccess.map(a=><div className="access-card" key={a.id}><div><strong>{unitName(a.business_unit_id)}</strong><small>{a.access_role.replaceAll('_',' ')} · Edit {a.can_edit?'Yes':'No'} · Approve {a.can_approve?'Yes':'No'}</small></div>{canAdmin&&<button className="icon-button small" onClick={()=>removeAccess(a.id)}>×</button>}</div>)}</div>
@@ -162,6 +180,6 @@ export default function AdminSection({units,role}:Props){
 
     {passwordTarget&&<div className="modal-backdrop" onClick={()=>setPasswordTarget(null)}><div className="modal-card" onClick={e=>e.stopPropagation()}><div className="form-title"><div><span className="eyebrow">Security administration</span><h2>Change password</h2><p className="muted">{passwordTarget.full_name||passwordTarget.email}</p></div><button className="icon-button" onClick={()=>setPasswordTarget(null)}>×</button></div><label>New password<input type="password" minLength={10} value={newPassword} onChange={e=>setNewPassword(e.target.value)} autoComplete="new-password"/></label><label>Confirm password<input type="password" minLength={10} value={confirmPassword} onChange={e=>setConfirmPassword(e.target.value)} autoComplete="new-password"/></label><div className="warning-box"><strong>Security</strong><p>Use a unique password of at least 10 characters. The password is sent only to the protected administrator function and is not stored in the application database.</p></div><button className="primary-button action-button" disabled={busy||newPassword.length<10} onClick={changePassword}>{busy?'Updating…':'Change password'}</button></div></div>}
 
-    <div className="phase-banner">Super Users and IT Administrators can securely change passwords and block/unblock sign-in. Personnel photos are private files and are shown wherever asset accountability is displayed.</div>
+    <div className="phase-banner">Super Users and IT Administrators can securely change passwords and block/unblock sign-in. Personnel photos are standardized automatically and shown wherever asset accountability is displayed.</div>
   </div>
 }
