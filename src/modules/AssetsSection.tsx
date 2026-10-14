@@ -37,7 +37,7 @@ type Props = {
 }
 
 const blank = {
-  business_unit_id: '', asset_code: '', name: '', asset_category: '', manufacturer: '', model: '', serial_number: '', year: '', criticality: '3', notes: '', responsible_user_id:''
+  business_unit_id: '', responsible_user_id:'', asset_code: '', name: '', asset_category: '', manufacturer: '', model: '', serial_number: '', year: '', criticality: '3', notes: ''
 }
 
 export default function AssetsSection({ units, userId, role }: Props) {
@@ -92,6 +92,7 @@ export default function AssetsSection({ units, userId, role }: Props) {
   async function createAsset(e: FormEvent) {
     e.preventDefault()
     setSaving(true); setMessage('')
+    if(!form.responsible_user_id){setMessage('Primary responsible person is required.');setSaving(false);return}
     const payload = {
       business_unit_id: form.business_unit_id,
       asset_code: form.asset_code.trim().toUpperCase(),
@@ -107,8 +108,11 @@ export default function AssetsSection({ units, userId, role }: Props) {
     const { data,error } = await supabase.from('assets').insert(payload).select('id').single()
     if (error) setMessage(error.message)
     else {
-      if(form.responsible_user_id&&data?.id){await supabase.from('asset_assignments').insert({asset_id:data.id,user_id:form.responsible_user_id,responsibility:'primary',active:true})}
-      setMessage('Asset created successfully.')
+      if(data?.id){
+        const {error:assignmentError}=await supabase.from('asset_assignments').insert({asset_id:data.id,user_id:form.responsible_user_id,responsibility:'primary',active:true})
+        if(assignmentError){setMessage(`Asset created, but responsible assignment failed: ${assignmentError.message}`);setSaving(false);await loadAssets();return}
+      }
+      setMessage('Asset created successfully with primary responsible assigned.')
       setForm(blank)
       setShowForm(false)
       await loadAssets()
@@ -156,6 +160,7 @@ export default function AssetsSection({ units, userId, role }: Props) {
         <div className="form-title"><div><span className="eyebrow">Asset setup</span><h2>Create asset</h2></div><button type="button" className="icon-button" onClick={() => setShowForm(false)}>×</button></div>
         <div className="form-grid">
           <label>Business unit<select required value={form.business_unit_id} onChange={e => setForm({...form,business_unit_id:e.target.value})}><option value="">Select unit</option>{units.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}</select></label>
+          <label>Primary responsible *<select required value={form.responsible_user_id} onChange={e=>setForm({...form,responsible_user_id:e.target.value})}><option value="">Select responsible person</option>{people.map(p=><option key={p.id} value={p.id}>{p.full_name||p.email} — {(p.position_title||p.role).replaceAll('_',' ')}</option>)}</select><small className="field-help">Accountable for ensuring inspections and maintenance are completed.</small></label>
           <label>Asset code<input required value={form.asset_code} onChange={e => setForm({...form,asset_code:e.target.value})} placeholder="e.g. MIX-001" /></label>
           <label>Asset name<input required value={form.name} onChange={e => setForm({...form,name:e.target.value})} placeholder="Mixer Truck 1" /></label>
           <label>Category<input required value={form.asset_category} onChange={e => setForm({...form,asset_category:e.target.value})} placeholder="Mixer Truck / Pump / Crusher" /></label>
@@ -164,10 +169,10 @@ export default function AssetsSection({ units, userId, role }: Props) {
           <label>Serial / VIN<input value={form.serial_number} onChange={e => setForm({...form,serial_number:e.target.value})} /></label>
           <label>Year<input inputMode="numeric" value={form.year} onChange={e => setForm({...form,year:e.target.value})} /></label>
           <label>Criticality<select value={form.criticality} onChange={e => setForm({...form,criticality:e.target.value})}><option value="1">1 — Low</option><option value="2">2</option><option value="3">3 — Medium</option><option value="4">4</option><option value="5">5 — Critical</option></select></label>
-          <label>Primary responsible<select value={form.responsible_user_id} onChange={e=>setForm({...form,responsible_user_id:e.target.value})}><option value="">Unassigned for now</option>{people.map(p=><option key={p.id} value={p.id}>{p.full_name||p.email} — {(p.position_title||p.role).replaceAll('_',' ')}</option>)}</select></label>
           <label className="span-2">Notes<textarea value={form.notes} onChange={e => setForm({...form,notes:e.target.value})} rows={3} /></label>
         </div>
-        <div className="form-actions"><button type="button" className="secondary-outline" onClick={() => setShowForm(false)}>Cancel</button><button className="primary-button action-button" disabled={saving}>{saving ? 'Saving…' : 'Create asset'}</button></div>
+        {people.length===0&&<div className="warning-box"><strong>No personnel available</strong><p>Create and activate personnel in Administration before creating assets, because every asset requires a primary responsible person.</p></div>}
+        <div className="form-actions"><button type="button" className="secondary-outline" onClick={() => setShowForm(false)}>Cancel</button><button className="primary-button action-button" disabled={saving||people.length===0}>{saving ? 'Saving…' : 'Create asset'}</button></div>
       </form>}
 
       <div className="toolbar">
