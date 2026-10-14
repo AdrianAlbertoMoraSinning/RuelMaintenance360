@@ -1,6 +1,7 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import type { BusinessUnit } from './AssetsSection'
+import './asset-profile.css'
 
 type Asset={id:string;business_unit_id:string;asset_code:string;name:string;asset_category:string;manufacturer:string|null;model:string|null}
 type DocumentRow={id:string;asset_id:string|null;business_unit_id:string|null;title:string;document_type:string;version:string|null;manufacturer:string|null;storage_path:string}
