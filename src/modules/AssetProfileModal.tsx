@@ -1,5 +1,6 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react'
 import { supabase } from '../lib/supabase'
+import './asset-profile.css'
 
 type Asset={
   id:string;business_unit_id:string;asset_code:string;name:string;asset_category:string;
