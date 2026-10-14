@@ -1,5 +1,6 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react'
 import { supabase } from '../lib/supabase'
+import AssetProfileModal from './AssetProfileModal'
 
 export type BusinessUnit = {
   id: string
@@ -52,6 +53,7 @@ export default function AssetsSection({ units, userId, role }: Props) {
   const [message, setMessage] = useState('')
   const [meterAsset, setMeterAsset] = useState<Asset | null>(null)
   const [responsibleAsset,setResponsibleAsset]=useState<Asset|null>(null)
+  const [profileAsset,setProfileAsset]=useState<Asset|null>(null)
   const [responsibleUserId,setResponsibleUserId]=useState('')
   const [meterType, setMeterType] = useState<'odometer_km' | 'hour_meter'>('hour_meter')
   const [meterValue, setMeterValue] = useState('')
@@ -146,7 +148,7 @@ export default function AssetsSection({ units, userId, role }: Props) {
   }
 
   return <div>
-    <div className="hero-row compact-hero"><div><span className="eyebrow">Master Asset Registry</span><h1>Assets</h1><p className="muted">Controlled categories, assigned accountability and a single record for every maintainable asset.</p></div>{canCreate&&<button className="primary-button action-button" onClick={()=>setShowForm(!showForm)}>+ New asset</button>}</div>
+    <div className="hero-row compact-hero"><div><span className="eyebrow">Master Asset Registry</span><h1>Assets</h1><p className="muted">Controlled categories, assigned accountability and a complete lifecycle dossier for every maintainable asset.</p></div>{canCreate&&<button className="primary-button action-button" onClick={()=>setShowForm(!showForm)}>+ New asset</button>}</div>
 
     {message&&<div className={message.includes('successfully')||message.includes('assigned')||message.includes('cleared')?'success-box':'error-box'}>{message}</div>}
 
@@ -184,8 +186,10 @@ export default function AssetsSection({ units, userId, role }: Props) {
       <td><span className={`status-pill ${a.status}`}>{a.status.replaceAll('_',' ')}</span></td>
       <td><span className={`criticality c${a.criticality}`}>C{a.criticality}</span></td>
       <td><span className="meter-line">{a.hour_meter!=null?`${a.hour_meter} h`:'— h'}</span><small>{a.odometer_km!=null?`${a.odometer_km} km`:'— km'}</small></td>
-      <td><div className="row-actions"><button className="secondary-outline mini" onClick={()=>{setMeterAsset(a);setMeterType(['MIXER_TRUCK','CONCRETE_PUMP','VOLUMETRIC_TRUCK','SERVICE_TRUCK','PICKUP_TRUCK'].includes(a.asset_category)?'odometer_km':'hour_meter')}}>Meter</button>{canAssign&&<button className="secondary-outline mini" onClick={()=>{setResponsibleAsset(a);setResponsibleUserId(primaryAssignment(a.id)?.user_id||'')}}>Responsible</button>}</div></td>
+      <td><div className="row-actions"><button className="secondary-outline mini" onClick={()=>setProfileAsset(a)}>Profile</button><button className="secondary-outline mini" onClick={()=>{setMeterAsset(a);setMeterType(['MIXER_TRUCK','CONCRETE_PUMP','VOLUMETRIC_TRUCK','SERVICE_TRUCK','PICKUP_TRUCK'].includes(a.asset_category)?'odometer_km':'hour_meter')}}>Meter</button>{canAssign&&<button className="secondary-outline mini" onClick={()=>{setResponsibleAsset(a);setResponsibleUserId(primaryAssignment(a.id)?.user_id||'')}}>Responsible</button>}</div></td>
     </tr>)}</tbody></table></div>}
+
+    {profileAsset&&<AssetProfileModal asset={profileAsset} role={role} onClose={()=>{setProfileAsset(null);loadAssets()}}/>}
 
     {meterAsset&&<div className="modal-backdrop" onClick={()=>setMeterAsset(null)}><form className="modal-card" onSubmit={saveMeter} onClick={e=>e.stopPropagation()}><div className="form-title"><div><span className="eyebrow">Field reading</span><h2>{meterAsset.asset_code}</h2></div><button type="button" className="icon-button" onClick={()=>setMeterAsset(null)}>×</button></div><label>Meter type<select value={meterType} onChange={e=>setMeterType(e.target.value as 'odometer_km'|'hour_meter')}><option value="hour_meter">Hour meter</option><option value="odometer_km">Odometer</option></select></label><label>Current reading<input autoFocus required type="number" min="0" step="0.1" value={meterValue} onChange={e=>setMeterValue(e.target.value)}/></label><button className="primary-button action-button">Save reading</button></form></div>}
 
