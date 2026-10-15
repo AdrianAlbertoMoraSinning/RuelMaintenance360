@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase'
 import type { BusinessUnit } from './AssetsSection'
 import PMAutomationPanel from './PMAutomationPanel'
 import MeterReadingsPanel from './MeterReadingsPanel'
+import ConditionMonitoringPanel from './ConditionMonitoringPanel'
 
 type Asset = { id:string; business_unit_id:string; asset_code:string; name:string; asset_category:string }
 type Plan = {
@@ -68,7 +69,7 @@ export default function MaintenancePlansSection({ units, role }:Props){
 
   const today=new Date().toISOString().slice(0,10)
   return <div>
-    <div className="hero-row compact-hero"><div><span className="eyebrow">Reliability Program</span><h1>Maintenance Plans</h1><p className="muted">Calendar, hour-meter and kilometre based maintenance with clear next-due points for every asset.</p></div>{canEdit&&<button className="primary-button action-button" onClick={()=>setShowForm(!showForm)}>+ New plan</button>}</div>
+    <div className="hero-row compact-hero"><div><span className="eyebrow">Reliability Program</span><h1>Maintenance Plans</h1><p className="muted">Calendar, hour-meter, kilometre and condition-based maintenance with automatic Work Order generation and controlled predictive escalation.</p></div>{canEdit&&<button className="primary-button action-button" onClick={()=>setShowForm(!showForm)}>+ New plan</button>}</div>
     {message&&<div className={message.includes('successfully')?'success-box':'error-box'}>{message}</div>}
     {showForm&&<form className="data-form" onSubmit={save}><div className="form-title"><div><span className="eyebrow">Maintenance strategy</span><h2>Create plan</h2></div><button type="button" className="icon-button" onClick={()=>setShowForm(false)}>×</button></div>
       <div className="form-grid">
@@ -87,6 +88,7 @@ export default function MaintenancePlansSection({ units, role }:Props){
     </form>}
     <PMAutomationPanel units={units} role={role} onChanged={load}/>
     <MeterReadingsPanel units={units} role={role} onChanged={load}/>
+    <ConditionMonitoringPanel units={units} role={role}/>
     <div className="toolbar"><input className="search-input" placeholder="Search plan or asset…" value={query} onChange={e=>setQuery(e.target.value)}/><select value={unitFilter} onChange={e=>setUnitFilter(e.target.value)}><option value="all">All business units</option>{units.map(u=><option key={u.id} value={u.id}>{u.name}</option>)}</select><span className="count-chip">{visible.length} plans</span></div>
     {loading?<div className="loading-panel">Loading maintenance plans…</div>:visible.length===0?<div className="empty-table">No maintenance plans recorded for this filter.</div>:<div className="table-wrap"><table className="data-table"><thead><tr><th>Plan</th><th>Asset</th><th>Business unit</th><th>Type</th><th>Trigger</th><th>Next due</th><th>Status</th></tr></thead><tbody>{visible.map(p=>{const a=assetFor(p.asset_id); const overdue=!!p.next_due_date&&p.next_due_date<today; return <tr key={p.id}><td><strong>{p.title}</strong><small>{p.description||'Scope pending'}</small></td><td><strong>{a?.asset_code||'—'}</strong><small>{a?.name||''}</small></td><td>{a?unitName(a.business_unit_id):'—'}</td><td><span className="status-pill active">{p.plan_type}</span></td><td>{p.trigger_basis}<small>{[p.interval_days&&`${p.interval_days} d`,p.interval_hours&&`${p.interval_hours} h`,p.interval_km&&`${p.interval_km} km`].filter(Boolean).join(' · ')||'Condition based'}</small></td><td>{p.next_due_date||'—'}<small>{[p.next_due_hours&&`${p.next_due_hours} h`,p.next_due_km&&`${p.next_due_km} km`].filter(Boolean).join(' · ')}</small></td><td><span className={`priority-pill ${overdue?'critical':'low'}`}>{overdue?'Overdue':'Active'}</span></td></tr>})}</tbody></table></div>}
   </div>
