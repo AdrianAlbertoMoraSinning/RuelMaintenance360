@@ -1,0 +1,23 @@
+import { useEffect, useMemo, useState } from 'react'
+import { supabase } from '../lib/supabase'
+
+type Perf={id:string;work_order_number:number;business_unit_id:string;asset_id:string;plan_title:string;status:string;priority:string;completed_at:string|null;maintenance_due_date:string|null;completed_on_time:boolean|null;overdue_days:number}
+type Forecast={maintenance_plan_id:string;asset_id:string;business_unit_id:string;asset_code:string;asset_name:string;title:string;plan_type:string;trigger_basis:string;next_due_date:string|null;days_to_due:number|null;hours_to_due:number|null;km_to_due:number|null;planned_labour_hours:number;estimated_cost:number}
+type Props={unitFilter:string}
+
+export default function PMCompliancePanel({unitFilter}:Props){
+  const [perf,setPerf]=useState<Perf[]>([]);const [forecast,setForecast]=useState<Forecast[]>([]);const [loading,setLoading]=useState(true)
+  useEffect(()=>{async function load(){setLoading(true);let pq=supabase.from('pm_work_order_performance').select('*');let fq=supabase.from('pm_forecast').select('*');if(unitFilter!=='all'){pq=pq.eq('business_unit_id',unitFilter);fq=fq.eq('business_unit_id',unitFilter)}const [{data:p},{data:f}]=await Promise.all([pq,fq]);setPerf((p||[]) as Perf[]);setForecast((f||[]) as Forecast[]);setLoading(false)}load()},[unitFilter])
+  const completed=useMemo(()=>perf.filter(x=>x.status==='completed'&&x.completed_at&&new Date(x.completed_at)>=new Date(Date.now()-90*86400000)),[perf])
+  const onTime=completed.filter(x=>x.completed_on_time===true).length;const compliance=completed.length?onTime/completed.length*100:0
+  const overdue=perf.filter(x=>!['completed','cancelled'].includes(x.status)&&Number(x.overdue_days||0)>0)
+  const due30=forecast.filter(x=>x.days_to_due!==null&&x.days_to_due>=0&&x.days_to_due<=30);const due60=forecast.filter(x=>x.days_to_due!==null&&x.days_to_due>30&&x.days_to_due<=60);const due90=forecast.filter(x=>x.days_to_due!==null&&x.days_to_due>60&&x.days_to_due<=90)
+  const meterDue=forecast.filter(x=>(x.hours_to_due!==null&&x.hours_to_due<=0)||(x.km_to_due!==null&&x.km_to_due<=0)).length
+  const horizon=[{label:'0–30 days',count:due30.length},{label:'31–60 days',count:due60.length},{label:'61–90 days',count:due90.length}];const max=Math.max(1,...horizon.map(x=>x.count))
+  const upcoming=[...forecast].filter(x=>x.days_to_due!==null&&x.days_to_due<=90).sort((a,b)=>Number(a.days_to_due??9999)-Number(b.days_to_due??9999)).slice(0,12)
+  return <section className="profile-panel" style={{marginBottom:20}}><div className="section-heading small-heading"><div><span className="eyebrow">PM Governance</span><h3>Compliance & 90-Day Forecast</h3></div><span className="count-chip">{loading?'Loading…':`${forecast.length} active plans`}</span></div>
+    <div className="stat-grid"><article className="stat-card"><span>PM compliance</span><strong>{compliance.toFixed(0)}%</strong><small>{onTime}/{completed.length} on time · last 90 days</small></article><article className="stat-card"><span>Overdue PM WOs</span><strong>{overdue.length}</strong><small>Active past due date</small></article><article className="stat-card"><span>Meter due now</span><strong>{meterDue}</strong><small>Hour/km threshold reached</small></article><article className="stat-card"><span>Next 30 days</span><strong>{due30.length}</strong><small>Upcoming planned maintenance</small></article></div>
+    <div className="planning-grid"><article><span className="eyebrow">Forecast load</span><h3>PM due by horizon</h3><div className="approval-aging-chart">{horizon.map(x=><div key={x.label}><span>{x.label}</span><i><b style={{width:`${x.count/max*100}%`}}/></i><strong>{x.count}</strong></div>)}</div></article><article><span className="eyebrow">Control definition</span><h3>What the KPI means</h3><p className="muted">Compliance measures completed PM work against the due-date snapshot captured when the Work Order was generated. Forecast uses current plan due dates plus live hour/km meters.</p></article></div>
+    <div className="table-wrap"><table className="data-table"><thead><tr><th>Asset</th><th>Plan</th><th>Trigger</th><th>Next due</th><th>Remaining</th><th>Hours</th><th>Estimate</th></tr></thead><tbody>{upcoming.map(x=><tr key={x.maintenance_plan_id}><td><strong>{x.asset_code}</strong><small>{x.asset_name}</small></td><td>{x.title}</td><td>{x.trigger_basis}</td><td>{x.next_due_date||'Meter based'}</td><td>{x.days_to_due!==null?`${x.days_to_due} d`:x.hours_to_due!==null?`${Number(x.hours_to_due).toFixed(1)} h`:x.km_to_due!==null?`${Number(x.km_to_due).toFixed(0)} km`:'Condition'}</td><td>{Number(x.planned_labour_hours||0).toFixed(1)}</td><td>${Number(x.estimated_cost||0).toLocaleString()}</td></tr>)}</tbody></table></div>
+  </section>
+}
