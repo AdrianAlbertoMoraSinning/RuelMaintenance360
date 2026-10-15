@@ -14,6 +14,13 @@ const requiredFiles = [
   'src/modules/ReportsSection.tsx',
   'src/modules/AdminSection.tsx',
   'public/favicon.svg',
+  'public/favicon-32x32.svg',
+  'public/favicon-16x16.svg',
+  'public/apple-touch-icon.png',
+  'public/android-chrome-192x192.png',
+  'public/android-chrome-512x512.png',
+  'public/mstile-150x150.png',
+  'public/safari-pinned-tab.svg',
   'public/site.webmanifest'
 ]
 
@@ -83,9 +90,14 @@ const requiredMarkers = {
   ],
   'index.html': [
     '/favicon.svg',
-    '/apple-touch-icon.svg',
+    '/apple-touch-icon.png',
+    '/mstile-150x150.png',
     '/safari-pinned-tab.svg',
     '/site.webmanifest'
+  ],
+  'public/site.webmanifest': [
+    '/android-chrome-192x192.png',
+    '/android-chrome-512x512.png'
   ]
 }
 
