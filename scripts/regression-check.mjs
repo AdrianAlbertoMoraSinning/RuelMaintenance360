@@ -3,6 +3,8 @@ import { readFileSync, existsSync } from 'node:fs'
 const requiredFiles = [
   'src/modules/BusinessUnitsPerformance.tsx',
   'src/modules/MaintenancePlanningSection.tsx',
+  'src/modules/MaintenancePlansSection.tsx',
+  'src/modules/PMAutomationPanel.tsx',
   'src/modules/ApprovalsDashboard.tsx',
   'src/modules/ApprovalsDashboardLive.tsx',
   'src/modules/WorkOrdersSection.tsx',
@@ -48,6 +50,17 @@ const requiredMarkers = {
     'Planned vs unplanned',
     'Current Week Technician Capacity',
     'Capacity Outlook'
+  ],
+  'src/modules/MaintenancePlansSection.tsx': [
+    'PMAutomationPanel',
+    'Controlled interval requirement'
+  ],
+  'src/modules/PMAutomationPanel.tsx': [
+    'generate_due_maintenance_work_orders',
+    'maintenance_due_board',
+    'maintenance_plan_parts',
+    'Run PM automation',
+    'Required parts'
   ],
   'src/modules/WorkOrdersSection.tsx': [
     'execution_approval_status',
