@@ -6,22 +6,26 @@ const requiredFiles = [
   'src/modules/ApprovalsDashboard.tsx',
   'src/modules/ApprovalsDashboardLive.tsx',
   'src/modules/WorkOrdersSection.tsx',
+  'src/modules/WorkOrderResources.tsx',
+  'src/modules/InventorySection.tsx',
   'src/modules/InspectionsSection.tsx',
   'src/modules/DocumentsSection.tsx',
   'src/modules/TechnicalAssistantSection.tsx',
   'src/modules/ReportsSection.tsx',
-  'src/modules/AdminSection.tsx'
+  'src/modules/AdminSection.tsx',
+  'public/favicon.svg',
+  'public/site.webmanifest'
 ]
 
 const requiredMarkers = {
   'src/App.tsx': [
-    "BusinessUnitsPerformance",
-    "MaintenancePlanningSection",
-    "ApprovalsDashboard",
-    "TechnicalAssistantSection",
-    "Business Unit Performance",
-    "Calendar & Backlog",
-    "My Approvals"
+    'BusinessUnitsPerformance',
+    'MaintenancePlanningSection',
+    'ApprovalsDashboard',
+    'TechnicalAssistantSection',
+    'Business Unit Performance',
+    'Calendar & Backlog',
+    'My Approvals'
   ],
   'src/modules/BusinessUnitsPerformance.tsx': [
     'Operational Performance by Unit',
@@ -45,6 +49,22 @@ const requiredMarkers = {
     'WorkOrderEvidence',
     'WorkOrderResources'
   ],
+  'src/modules/WorkOrderResources.tsx': [
+    'work_order_part_requests',
+    'issue_part_to_work_order',
+    'return_part_from_work_order',
+    'purchase_required',
+    'Inventory execution locked'
+  ],
+  'src/modules/InventorySection.tsx': [
+    'inventory_stock_summary',
+    'inventory_kardex',
+    'inventory_counts',
+    'transfer_inventory_part',
+    'Parts, Warehouses & Kardex',
+    'Physical Counts',
+    'Warehouses & Storage Positions'
+  ],
   'src/modules/InspectionsSection.tsx': [
     'OFFLINE_KEY',
     'offline',
@@ -60,6 +80,12 @@ const requiredMarkers = {
     'tesseract.js',
     'document_chunks',
     'OCR'
+  ],
+  'index.html': [
+    '/favicon.svg',
+    '/apple-touch-icon.svg',
+    '/safari-pinned-tab.svg',
+    '/site.webmanifest'
   ]
 }
 
