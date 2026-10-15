@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import type { BusinessUnit } from './AssetsSection'
+import PMCompliancePanel from './PMCompliancePanel'
 import './planning-capacity.css'
 
 type Asset={id:string;business_unit_id:string;asset_code:string;name:string}
@@ -39,6 +40,7 @@ export default function MaintenancePlanningSection({units}:Props){
   const classTotal=Math.max(1,plannedCount+unplannedCount)
   return <div><div className="hero-row compact-hero"><div><span className="eyebrow">Maintenance Planning & Capacity</span><h1>Calendar, Backlog & Capacity</h1><p className="muted">Upcoming PM, workload, technician capacity, schedule compliance and planned-vs-unplanned maintenance in one workspace.</p></div></div>
     <div className="toolbar"><select value={unitFilter} onChange={e=>setUnitFilter(e.target.value)}><option value="all">All business units</option>{units.map(u=><option key={u.id} value={u.id}>{u.name}</option>)}</select></div>
+    <PMCompliancePanel unitFilter={unitFilter}/>
     <div className="stat-grid"><article className="stat-card"><span>Open backlog</span><strong>{filteredOrders.length}</strong><small>{plannedHours.toFixed(1)} planned labour h</small></article><article className="stat-card"><span>High / Critical</span><strong>{highRisk}</strong><small>Priority work</small></article><article className="stat-card"><span>Unscheduled</span><strong>{unscheduled}</strong><small>Needs planning</small></article><article className="stat-card"><span>Schedule compliance</span><strong>{scheduleCompliance.toFixed(0)}%</strong><small>Last 30 days · completed within +24 h</small></article></div>
     <section className="planning-grid"><article className="profile-panel"><span className="eyebrow">Backlog aging</span><h3>Open work by age</h3><div className="approval-aging-chart">{backlogBands.map(x=><div key={x.label}><span>{x.label}</span><i><b style={{width:`${x.count/max*100}%`}}/></i><strong>{x.count}</strong></div>)}</div></article><article className="profile-panel"><span className="eyebrow">Work mix</span><h3>Planned vs unplanned</h3><div className="mix-donut" style={{background:`conic-gradient(#f4c430 0 ${plannedCount/classTotal*100}%,#222 ${plannedCount/classTotal*100}% 100%)`}}><div><strong>{plannedCount}</strong><small>planned</small></div></div><div className="mini-legend"><span><i className="legend-yellow"/>Planned {plannedCount}</span><span><i className="legend-dark"/>Unplanned {unplannedCount}</span></div></article></section>
     <div className="section-heading"><div><span className="eyebrow">People & load</span><h2>Current Week Technician Capacity</h2></div><span className="count-chip">Productive capacity target</span></div>
