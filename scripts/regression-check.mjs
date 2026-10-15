@@ -62,7 +62,6 @@ const requiredMarkers = {
     'add_work_order_part_requirement',
     'issue_part_to_work_order',
     'return_part_from_work_order',
-    'purchase_required',
     'Dynamic material planning',
     'quantity_available',
     'quantity_on_order'
