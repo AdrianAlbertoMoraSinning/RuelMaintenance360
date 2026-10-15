@@ -2,103 +2,69 @@ import { FormEvent, useEffect, useMemo, useState } from 'react'
 import { supabase } from '../lib/supabase'
 
 type Part={id:string;part_number:string;description:string;unit_of_measure:string;standard_cost:number;active:boolean}
-type Location={id:string;business_unit_id:string;name:string}
+type Location={id:string;business_unit_id:string;name:string;position_code:string|null}
 type Stock={location_id:string|null;part_id:string|null;quantity_on_hand:number|null}
-type Tx={id:string;part_id:string;location_id:string;transaction_type:string;quantity:number;unit_cost:number;recorded_at:string;reference:string|null;notes:string|null}
+type Tx={id:string;part_id:string;location_id:string;request_id:string|null;transaction_type:string;quantity:number;unit_cost:number;recorded_at:string;reference:string|null;notes:string|null}
+type PartRequest={id:string;work_order_id:string;part_id:string;preferred_location_id:string|null;quantity_requested:number;quantity_approved:number;quantity_issued:number;quantity_returned:number;quantity_to_purchase:number;status:string;notes:string|null;created_at:string}
 type Vendor={id:string;name:string;contact_name:string|null;phone:string|null;email:string|null;active:boolean}
 type WorkVendor={work_order_id:string;vendor_id:string;quoted_amount:number|null;invoiced_amount:number|null;response_hours:number|null;completion_rating:number|null;notes:string|null}
 type Props={workOrderId:string;businessUnitId:string;userId:string;canManage:boolean;onChanged:()=>void}
 
 export default function WorkOrderResources({workOrderId,businessUnitId,userId,canManage,onChanged}:Props){
-  const [parts,setParts]=useState<Part[]>([])
-  const [locations,setLocations]=useState<Location[]>([])
-  const [stock,setStock]=useState<Stock[]>([])
-  const [transactions,setTransactions]=useState<Tx[]>([])
-  const [vendors,setVendors]=useState<Vendor[]>([])
-  const [linkedVendors,setLinkedVendors]=useState<WorkVendor[]>([])
-  const [message,setMessage]=useState('')
-  const [saving,setSaving]=useState(false)
-  const [partForm,setPartForm]=useState({part_id:'',location_id:'',quantity:'',unit_cost:'',reference:'',notes:'',transaction_type:'issue'})
+  const [parts,setParts]=useState<Part[]>([]);const [locations,setLocations]=useState<Location[]>([]);const [stock,setStock]=useState<Stock[]>([]);const [transactions,setTransactions]=useState<Tx[]>([]);const [requests,setRequests]=useState<PartRequest[]>([]);const [vendors,setVendors]=useState<Vendor[]>([]);const [linkedVendors,setLinkedVendors]=useState<WorkVendor[]>([]);const [approvalStatus,setApprovalStatus]=useState('draft');const [workOrderNumber,setWorkOrderNumber]=useState<number|null>(null)
+  const [message,setMessage]=useState('');const [saving,setSaving]=useState(false)
+  const [requestForm,setRequestForm]=useState({part_id:'',preferred_location_id:'',quantity:'',notes:''})
+  const [partForm,setPartForm]=useState({request_id:'',part_id:'',location_id:'',quantity:'',unit_cost:'',notes:'',transaction_type:'issue'})
   const [vendorForm,setVendorForm]=useState({vendor_id:'',quoted_amount:'',invoiced_amount:'',response_hours:'',completion_rating:'',notes:''})
 
-  async function load(){
-    const [{data:p},{data:l},{data:s},{data:t},{data:v},{data:wv}]=await Promise.all([
-      supabase.from('parts').select('id,part_number,description,unit_of_measure,standard_cost,active').eq('active',true).order('part_number'),
-      supabase.from('inventory_locations').select('id,business_unit_id,name').eq('business_unit_id',businessUnitId).eq('active',true).order('name'),
-      supabase.from('inventory_on_hand').select('location_id,part_id,quantity_on_hand').eq('business_unit_id',businessUnitId),
-      supabase.from('inventory_transactions').select('id,part_id,location_id,transaction_type,quantity,unit_cost,recorded_at,reference,notes').eq('work_order_id',workOrderId).order('recorded_at',{ascending:false}),
-      supabase.from('vendors').select('id,name,contact_name,phone,email,active').eq('active',true).order('name'),
-      supabase.from('work_order_vendors').select('work_order_id,vendor_id,quoted_amount,invoiced_amount,response_hours,completion_rating,notes').eq('work_order_id',workOrderId)
-    ])
-    setParts((p||[]) as Part[]);setLocations((l||[]) as Location[]);setStock((s||[]) as Stock[]);setTransactions((t||[]) as Tx[]);setVendors((v||[]) as Vendor[]);setLinkedVendors((wv||[]) as WorkVendor[])
-  }
+  async function load(){const [{data:p},{data:l},{data:s},{data:t},{data:r},{data:v},{data:wv},{data:w}]=await Promise.all([
+    supabase.from('parts').select('id,part_number,description,unit_of_measure,standard_cost,active').eq('active',true).order('part_number'),
+    supabase.from('inventory_locations').select('id,business_unit_id,name,position_code').eq('business_unit_id',businessUnitId).eq('active',true).order('name'),
+    supabase.from('inventory_on_hand').select('location_id,part_id,quantity_on_hand').eq('business_unit_id',businessUnitId),
+    supabase.from('inventory_transactions').select('id,part_id,location_id,request_id,transaction_type,quantity,unit_cost,recorded_at,reference,notes').eq('work_order_id',workOrderId).order('recorded_at',{ascending:false}),
+    supabase.from('work_order_part_requests').select('id,work_order_id,part_id,preferred_location_id,quantity_requested,quantity_approved,quantity_issued,quantity_returned,quantity_to_purchase,status,notes,created_at').eq('work_order_id',workOrderId).order('created_at',{ascending:false}),
+    supabase.from('vendors').select('id,name,contact_name,phone,email,active').eq('active',true).order('name'),
+    supabase.from('work_order_vendors').select('work_order_id,vendor_id,quoted_amount,invoiced_amount,response_hours,completion_rating,notes').eq('work_order_id',workOrderId),
+    supabase.from('work_orders').select('work_order_number,execution_approval_status').eq('id',workOrderId).single()
+  ]);setParts((p||[]) as Part[]);setLocations((l||[]) as Location[]);setStock((s||[]) as Stock[]);setTransactions((t||[]) as Tx[]);setRequests((r||[]) as PartRequest[]);setVendors((v||[]) as Vendor[]);setLinkedVendors((wv||[]) as WorkVendor[]);if(w){setApprovalStatus(w.execution_approval_status);setWorkOrderNumber(w.work_order_number)}}
   useEffect(()=>{load()},[workOrderId,businessUnitId])
 
-  function part(id:string){return parts.find(p=>p.id===id)}
-  function location(id:string){return locations.find(l=>l.id===id)}
-  function vendor(id:string){return vendors.find(v=>v.id===id)}
+  function part(id:string){return parts.find(p=>p.id===id)}function location(id:string){return locations.find(l=>l.id===id)}function vendor(id:string){return vendors.find(v=>v.id===id)}
   function onHand(partId:string,locationId:string){return Number(stock.find(s=>s.part_id===partId&&s.location_id===locationId)?.quantity_on_hand||0)}
+  function unitOnHand(partId:string){return stock.filter(s=>s.part_id===partId).reduce((sum,s)=>sum+Number(s.quantity_on_hand||0),0)}
+  const executionApproved=approvalStatus==='approved'
 
-  const issuedCost=useMemo(()=>transactions.reduce((sum,t)=>{
-    if(t.transaction_type==='issue')return sum+Math.abs(Number(t.quantity))*Number(t.unit_cost||0)
-    if(t.transaction_type==='return')return sum-Math.abs(Number(t.quantity))*Number(t.unit_cost||0)
-    return sum
-  },0),[transactions])
+  const issuedCost=useMemo(()=>transactions.reduce((sum,t)=>t.transaction_type==='issue'?sum+Math.abs(Number(t.quantity))*Number(t.unit_cost||0):t.transaction_type==='return'?sum-Math.abs(Number(t.quantity))*Number(t.unit_cost||0):sum,0),[transactions])
   const vendorCost=useMemo(()=>linkedVendors.reduce((sum,v)=>sum+Number(v.invoiced_amount??v.quoted_amount??0),0),[linkedVendors])
 
-  async function savePart(e:FormEvent){
-    e.preventDefault();if(!canManage)return
-    const qty=Math.abs(Number(partForm.quantity||0));if(!qty){setMessage('Quantity must be greater than zero.');return}
-    const p=part(partForm.part_id);if(!p)return
-    if(partForm.transaction_type==='issue'&&qty>onHand(partForm.part_id,partForm.location_id)){setMessage('Issue quantity exceeds current stock at this location.');return}
-    setSaving(true);setMessage('')
-    const {error}=await supabase.from('inventory_transactions').insert({part_id:partForm.part_id,location_id:partForm.location_id,work_order_id:workOrderId,transaction_type:partForm.transaction_type,quantity:qty,unit_cost:partForm.unit_cost?Number(partForm.unit_cost):Number(p.standard_cost||0),reference:partForm.reference.trim()||null,notes:partForm.notes.trim()||null,recorded_by:userId})
-    if(error)setMessage(error.message);else{setMessage(partForm.transaction_type==='issue'?'Part issued to work order.':'Part returned from work order.');setPartForm({part_id:'',location_id:'',quantity:'',unit_cost:'',reference:'',notes:'',transaction_type:'issue'});await load();onChanged()}
-    setSaving(false)
-  }
+  async function requestPart(e:FormEvent){e.preventDefault();if(!canManage)return;const qty=Math.abs(Number(requestForm.quantity||0));if(!qty||!requestForm.part_id)return;const available=unitOnHand(requestForm.part_id);const toPurchase=Math.max(0,qty-available);setSaving(true);setMessage('');const {error}=await supabase.from('work_order_part_requests').insert({work_order_id:workOrderId,part_id:requestForm.part_id,preferred_location_id:requestForm.preferred_location_id||null,quantity_requested:qty,quantity_approved:qty,quantity_to_purchase:toPurchase,status:toPurchase>0?'purchase_required':'approved',notes:requestForm.notes.trim()||null,requested_by:userId,approved_by:userId});if(error)setMessage(error.message);else{setMessage(toPurchase>0?`Part requirement recorded. ${toPurchase} unit(s) require purchase/receipt before issue.`:'Part requirement recorded and stock is available.');setRequestForm({part_id:'',preferred_location_id:'',quantity:'',notes:''});await load()}setSaving(false)}
+
+  function chooseRequest(id:string){const r=requests.find(x=>x.id===id);if(!r){setPartForm({...partForm,request_id:id});return}const p=part(r.part_id);setPartForm({request_id:id,part_id:r.part_id,location_id:r.preferred_location_id||'',quantity:String(Math.max(0,Number(r.quantity_approved||r.quantity_requested)-Number(r.quantity_issued||0))),unit_cost:p?.standard_cost?.toString()||'',notes:'',transaction_type:'issue'})}
+
+  async function savePart(e:FormEvent){e.preventDefault();if(!canManage)return;const qty=Math.abs(Number(partForm.quantity||0));if(!qty){setMessage('Quantity must be greater than zero.');return}const p=part(partForm.part_id);if(!p)return;setSaving(true);setMessage('');const fn=partForm.transaction_type==='issue'?'issue_part_to_work_order':'return_part_from_work_order';const args={p_work_order_id:workOrderId,p_part_id:partForm.part_id,p_location_id:partForm.location_id,p_quantity:qty,p_unit_cost:partForm.unit_cost?Number(partForm.unit_cost):Number(p.standard_cost||0),p_request_id:partForm.request_id||null,p_notes:partForm.notes.trim()||null};const {error}=await supabase.rpc(fn,args);if(error)setMessage(error.message);else{setMessage(partForm.transaction_type==='issue'?'Part issued: stock, Kardex and Work Order cost updated automatically.':'Part returned: stock, Kardex and Work Order cost reversed automatically.');setPartForm({request_id:'',part_id:'',location_id:'',quantity:'',unit_cost:'',notes:'',transaction_type:'issue'});await load();onChanged()}setSaving(false)}
 
   function editVendor(row:WorkVendor){setVendorForm({vendor_id:row.vendor_id,quoted_amount:row.quoted_amount?.toString()||'',invoiced_amount:row.invoiced_amount?.toString()||'',response_hours:row.response_hours?.toString()||'',completion_rating:row.completion_rating?.toString()||'',notes:row.notes||''})}
-
-  async function saveVendor(e:FormEvent){
-    e.preventDefault();if(!canManage||!vendorForm.vendor_id)return
-    setSaving(true);setMessage('')
-    const payload={work_order_id:workOrderId,vendor_id:vendorForm.vendor_id,quoted_amount:vendorForm.quoted_amount?Number(vendorForm.quoted_amount):null,invoiced_amount:vendorForm.invoiced_amount?Number(vendorForm.invoiced_amount):null,response_hours:vendorForm.response_hours?Number(vendorForm.response_hours):null,completion_rating:vendorForm.completion_rating?Number(vendorForm.completion_rating):null,notes:vendorForm.notes.trim()||null}
-    const {error}=await supabase.from('work_order_vendors').upsert(payload,{onConflict:'work_order_id,vendor_id'})
-    if(error)setMessage(error.message);else{setMessage('Vendor linkage saved.');setVendorForm({vendor_id:'',quoted_amount:'',invoiced_amount:'',response_hours:'',completion_rating:'',notes:''});await load();onChanged()}
-    setSaving(false)
-  }
+  async function saveVendor(e:FormEvent){e.preventDefault();if(!canManage||!vendorForm.vendor_id)return;if(!executionApproved){setMessage('Vendor commitment is locked until Work Order execution is approved.');return}setSaving(true);setMessage('');const payload={work_order_id:workOrderId,vendor_id:vendorForm.vendor_id,quoted_amount:vendorForm.quoted_amount?Number(vendorForm.quoted_amount):null,invoiced_amount:vendorForm.invoiced_amount?Number(vendorForm.invoiced_amount):null,response_hours:vendorForm.response_hours?Number(vendorForm.response_hours):null,completion_rating:vendorForm.completion_rating?Number(vendorForm.completion_rating):null,notes:vendorForm.notes.trim()||null};const {error}=await supabase.from('work_order_vendors').upsert(payload,{onConflict:'work_order_id,vendor_id'});if(error)setMessage(error.message);else{setMessage('Vendor linkage saved.');setVendorForm({vendor_id:'',quoted_amount:'',invoiced_amount:'',response_hours:'',completion_rating:'',notes:''});await load();onChanged()}setSaving(false)}
 
   return <div className="wo-resources">
-    {message&&<div className={/issued|returned|saved/i.test(message)?'success-box':'error-box'}>{message}</div>}
-    <div className="section-heading small-heading"><div><span className="eyebrow">Materials & external services</span><h3>Work order resources</h3></div><span className="count-chip">Parts ${Math.max(issuedCost,0).toFixed(2)} · Vendors ${vendorCost.toFixed(2)}</span></div>
+    {message&&<div className={/recorded|issued|returned|saved|updated automatically/i.test(message)?'success-box':'error-box'}>{message}</div>}
+    <div className="section-heading small-heading"><div><span className="eyebrow">Materials & external services</span><h3>Work order resources</h3></div><span className="count-chip">WO #{workOrderNumber||'—'} · Parts ${Math.max(issuedCost,0).toFixed(2)} · Vendors ${vendorCost.toFixed(2)}</span></div>
+    <div className={`approval-gate ${executionApproved?'approved':'locked'}`}><strong>{executionApproved?'Inventory execution unlocked':'Inventory execution locked'}</strong><p>{executionApproved?'Approved parts may now be issued. Every issue automatically reduces inventory, writes Kardex and updates WO parts cost.':'Parts may be requested/planned now, but no stock issue or vendor commitment is allowed until execution approval is complete.'}</p></div>
+
+    <section className="profile-panel" style={{marginBottom:16}}><div className="section-heading small-heading"><div><span className="eyebrow">Material planning</span><h3>Part requirements / purchase needs</h3></div><span className="count-chip">{requests.length} requests</span></div>
+      {requests.length===0?<div className="empty-table compact">No part requirements recorded for this work order.</div>:<div className="profile-list">{requests.map(r=>{const p=part(r.part_id);return <button type="button" className="profile-list-row" key={r.id} onClick={()=>chooseRequest(r.id)}><span><strong>{p?.part_number||'Part'} — {p?.description||''}</strong><small>Requested {Number(r.quantity_requested).toFixed(2)} {p?.unit_of_measure||''} · Issued {Number(r.quantity_issued).toFixed(2)} · Returned {Number(r.quantity_returned).toFixed(2)}{Number(r.quantity_to_purchase)>0?` · BUY ${Number(r.quantity_to_purchase).toFixed(2)}`:''}</small></span><b className={`request-status ${r.status}`}>{r.status.replaceAll('_',' ')}</b></button>})}</div>}
+      {canManage&&<form className="resource-form" onSubmit={requestPart}><label>Part<select required value={requestForm.part_id} onChange={e=>setRequestForm({...requestForm,part_id:e.target.value})}><option value="">Select part</option>{parts.map(p=><option key={p.id} value={p.id}>{p.part_number} — {p.description} · {unitOnHand(p.id).toFixed(2)} available</option>)}</select></label><label>Preferred stock position<select value={requestForm.preferred_location_id} onChange={e=>setRequestForm({...requestForm,preferred_location_id:e.target.value})}><option value="">Any position in this unit</option>{locations.map(l=><option key={l.id} value={l.id}>{l.name}{requestForm.part_id?` — ${onHand(requestForm.part_id,l.id).toFixed(2)} on hand`:''}</option>)}</select></label><label>Required quantity<input required type="number" min="0.01" step="0.01" value={requestForm.quantity} onChange={e=>setRequestForm({...requestForm,quantity:e.target.value})}/></label><label className="span-2">Notes<input value={requestForm.notes} onChange={e=>setRequestForm({...requestForm,notes:e.target.value})} placeholder="Why needed / purchase specification / timing"/></label><button className="primary-button action-button" disabled={saving}>{saving?'Saving…':'Add part requirement'}</button></form>}
+    </section>
+
     <div className="wo-resource-grid">
-      <section className="profile-panel">
-        <div className="section-heading small-heading"><div><span className="eyebrow">Inventory</span><h3>Parts used</h3></div><span className="count-chip">{transactions.length}</span></div>
-        {transactions.length===0?<div className="empty-table compact">No parts linked to this work order.</div>:<div className="profile-list">{transactions.map(t=>{const p=part(t.part_id);return <div className="profile-list-row static-row" key={t.id}><span><strong>{p?.part_number||'Part'} — {p?.description||''}</strong><small>{t.transaction_type} · {Math.abs(Number(t.quantity))} {p?.unit_of_measure||''} · {location(t.location_id)?.name||'Location'} · ${Number(t.unit_cost||0).toFixed(2)}/unit</small></span><b>{t.transaction_type==='return'?'-':'$'}{(Math.abs(Number(t.quantity))*Number(t.unit_cost||0)).toFixed(2)}</b></div>})}</div>}
-        {canManage&&<form className="resource-form" onSubmit={savePart}>
-          <label>Movement<select value={partForm.transaction_type} onChange={e=>setPartForm({...partForm,transaction_type:e.target.value})}><option value="issue">Issue to WO</option><option value="return">Return from WO</option></select></label>
-          <label>Part<select required value={partForm.part_id} onChange={e=>{const p=part(e.target.value);setPartForm({...partForm,part_id:e.target.value,unit_cost:p?.standard_cost?.toString()||''})}}><option value="">Select part</option>{parts.map(p=><option key={p.id} value={p.id}>{p.part_number} — {p.description}</option>)}</select></label>
-          <label>Location<select required value={partForm.location_id} onChange={e=>setPartForm({...partForm,location_id:e.target.value})}><option value="">Select location</option>{locations.map(l=><option key={l.id} value={l.id}>{l.name}{partForm.part_id?` — ${onHand(partForm.part_id,l.id).toFixed(2)} on hand`:''}</option>)}</select></label>
-          <label>Quantity<input required type="number" min="0.01" step="0.01" value={partForm.quantity} onChange={e=>setPartForm({...partForm,quantity:e.target.value})}/></label>
-          <label>Unit cost CAD<input type="number" min="0" step="0.01" value={partForm.unit_cost} onChange={e=>setPartForm({...partForm,unit_cost:e.target.value})}/></label>
-          <label>Reference<input value={partForm.reference} onChange={e=>setPartForm({...partForm,reference:e.target.value})} placeholder="PO / invoice / slip"/></label>
-          <label className="span-2">Notes<input value={partForm.notes} onChange={e=>setPartForm({...partForm,notes:e.target.value})}/></label>
-          <button className="primary-button action-button" disabled={saving}>{saving?'Saving…':'Record part movement'}</button>
-        </form>}
+      <section className="profile-panel"><div className="section-heading small-heading"><div><span className="eyebrow">Inventory execution</span><h3>Parts used / returned</h3></div><span className="count-chip">{transactions.length}</span></div>
+        {transactions.length===0?<div className="empty-table compact">No inventory consumption posted to this work order.</div>:<div className="profile-list">{transactions.map(t=>{const p=part(t.part_id);return <div className="profile-list-row static-row" key={t.id}><span><strong>{p?.part_number||'Part'} — {p?.description||''}</strong><small>{t.transaction_type} · {Math.abs(Number(t.quantity))} {p?.unit_of_measure||''} · {location(t.location_id)?.name||'Location'} · ${Number(t.unit_cost||0).toFixed(2)}/unit</small></span><b>{t.transaction_type==='return'?'-':'$'}{(Math.abs(Number(t.quantity))*Number(t.unit_cost||0)).toFixed(2)}</b></div>})}</div>}
+        {canManage&&<form className="resource-form" onSubmit={savePart}><label>Movement<select value={partForm.transaction_type} onChange={e=>setPartForm({...partForm,transaction_type:e.target.value})}><option value="issue">Issue to WO</option><option value="return">Return unused part</option></select></label><label>Part request<select value={partForm.request_id} onChange={e=>chooseRequest(e.target.value)}><option value="">Direct approved issue / return</option>{requests.filter(r=>!['cancelled','closed'].includes(r.status)).map(r=><option key={r.id} value={r.id}>{part(r.part_id)?.part_number} — requested {Number(r.quantity_requested).toFixed(2)}</option>)}</select></label><label>Part<select required value={partForm.part_id} onChange={e=>{const p=part(e.target.value);setPartForm({...partForm,part_id:e.target.value,unit_cost:p?.standard_cost?.toString()||''})}}><option value="">Select part</option>{parts.map(p=><option key={p.id} value={p.id}>{p.part_number} — {p.description}</option>)}</select></label><label>Stock position<select required value={partForm.location_id} onChange={e=>setPartForm({...partForm,location_id:e.target.value})}><option value="">Select location</option>{locations.map(l=><option key={l.id} value={l.id}>{l.name}{partForm.part_id?` — ${onHand(partForm.part_id,l.id).toFixed(2)} on hand`:''}</option>)}</select></label><label>Quantity<input required type="number" min="0.01" step="0.01" value={partForm.quantity} onChange={e=>setPartForm({...partForm,quantity:e.target.value})}/></label><label>Unit cost CAD<input type="number" min="0" step="0.01" value={partForm.unit_cost} onChange={e=>setPartForm({...partForm,unit_cost:e.target.value})}/></label><label className="span-2">Notes<input value={partForm.notes} onChange={e=>setPartForm({...partForm,notes:e.target.value})}/></label><button className="primary-button action-button" disabled={saving||(!executionApproved&&partForm.transaction_type==='issue')}>{saving?'Saving…':partForm.transaction_type==='issue'?'Issue & update inventory':'Return & update inventory'}</button></form>}
       </section>
 
-      <section className="profile-panel">
-        <div className="section-heading small-heading"><div><span className="eyebrow">External service</span><h3>Vendors</h3></div><span className="count-chip">{linkedVendors.length}</span></div>
+      <section className="profile-panel"><div className="section-heading small-heading"><div><span className="eyebrow">External service</span><h3>Vendors</h3></div><span className="count-chip">{linkedVendors.length}</span></div>
         {linkedVendors.length===0?<div className="empty-table compact">No vendor linked to this work order.</div>:<div className="profile-list">{linkedVendors.map(v=>{const x=vendor(v.vendor_id);return <button type="button" className="profile-list-row" key={v.vendor_id} onClick={()=>editVendor(v)}><span><strong>{x?.name||'Vendor'}</strong><small>{x?.contact_name||x?.email||x?.phone||'Contact not recorded'} · quoted ${Number(v.quoted_amount||0).toFixed(2)} · invoiced ${Number(v.invoiced_amount||0).toFixed(2)}</small></span><b>Edit →</b></button>})}</div>}
-        {canManage&&<form className="resource-form" onSubmit={saveVendor}>
-          <label className="span-2">Vendor<select required value={vendorForm.vendor_id} onChange={e=>setVendorForm({...vendorForm,vendor_id:e.target.value})}><option value="">Select vendor</option>{vendors.map(v=><option key={v.id} value={v.id}>{v.name}</option>)}</select></label>
-          <label>Quoted CAD<input type="number" min="0" step="0.01" value={vendorForm.quoted_amount} onChange={e=>setVendorForm({...vendorForm,quoted_amount:e.target.value})}/></label>
-          <label>Invoiced CAD<input type="number" min="0" step="0.01" value={vendorForm.invoiced_amount} onChange={e=>setVendorForm({...vendorForm,invoiced_amount:e.target.value})}/></label>
-          <label>Response hours<input type="number" min="0" step="0.1" value={vendorForm.response_hours} onChange={e=>setVendorForm({...vendorForm,response_hours:e.target.value})}/></label>
-          <label>Completion rating<input type="number" min="0" max="5" step="0.1" value={vendorForm.completion_rating} onChange={e=>setVendorForm({...vendorForm,completion_rating:e.target.value})}/></label>
-          <label className="span-2">Notes<input value={vendorForm.notes} onChange={e=>setVendorForm({...vendorForm,notes:e.target.value})}/></label>
-          <button className="primary-button action-button" disabled={saving}>{saving?'Saving…':'Save vendor'}</button>
-        </form>}
+        {canManage&&<form className="resource-form" onSubmit={saveVendor}><label className="span-2">Vendor<select required value={vendorForm.vendor_id} onChange={e=>setVendorForm({...vendorForm,vendor_id:e.target.value})}><option value="">Select vendor</option>{vendors.map(v=><option key={v.id} value={v.id}>{v.name}</option>)}</select></label><label>Quoted CAD<input type="number" min="0" step="0.01" value={vendorForm.quoted_amount} onChange={e=>setVendorForm({...vendorForm,quoted_amount:e.target.value})}/></label><label>Invoiced CAD<input type="number" min="0" step="0.01" value={vendorForm.invoiced_amount} onChange={e=>setVendorForm({...vendorForm,invoiced_amount:e.target.value})}/></label><label>Response hours<input type="number" min="0" step="0.1" value={vendorForm.response_hours} onChange={e=>setVendorForm({...vendorForm,response_hours:e.target.value})}/></label><label>Completion rating<input type="number" min="0" max="5" step="0.1" value={vendorForm.completion_rating} onChange={e=>setVendorForm({...vendorForm,completion_rating:e.target.value})}/></label><label className="span-2">Notes<input value={vendorForm.notes} onChange={e=>setVendorForm({...vendorForm,notes:e.target.value})}/></label><button className="primary-button action-button" disabled={saving||!executionApproved}>{saving?'Saving…':'Save vendor commitment'}</button></form>}
       </section>
     </div>
   </div>
