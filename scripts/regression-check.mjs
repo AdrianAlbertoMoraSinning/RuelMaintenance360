@@ -54,23 +54,34 @@ const requiredMarkers = {
     'approve_work_order_execution_manager',
     'approve_work_order_execution_super_admin',
     'WorkOrderEvidence',
-    'WorkOrderResources'
+    'WorkOrderResources',
+    'Create work order & plan parts',
+    'additional parts can also be added later'
   ],
   'src/modules/WorkOrderResources.tsx': [
-    'work_order_part_requests',
+    'add_work_order_part_requirement',
     'issue_part_to_work_order',
     'return_part_from_work_order',
     'purchase_required',
-    'Inventory execution locked'
+    'Dynamic material planning',
+    'quantity_available',
+    'quantity_on_order'
   ],
   'src/modules/InventorySection.tsx': [
     'inventory_stock_summary',
     'inventory_kardex',
     'inventory_counts',
     'transfer_inventory_part',
+    'inventory_purchase_orders',
+    'inventory_purchase_order_lines',
+    'receive_purchase_order_line',
+    'inventory_replenishment_report',
+    'inventory_responsibility_history',
     'Parts, Warehouses & Kardex',
+    'Purchase Orders & Receipts',
     'Physical Counts',
-    'Warehouses & Storage Positions'
+    'Warehouses & Storage Positions',
+    'Custody History'
   ],
   'src/modules/InspectionsSection.tsx': [
     'OFFLINE_KEY',
