@@ -1,6 +1,7 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import type { BusinessUnit } from './AssetsSection'
+import PMAutomationPanel from './PMAutomationPanel'
 
 type Asset = { id:string; business_unit_id:string; asset_code:string; name:string; asset_category:string }
 type Plan = {
@@ -81,8 +82,9 @@ export default function MaintenancePlansSection({ units, role }:Props){
         <label>Next due hours<input type="number" min="0" step="0.1" value={form.next_due_hours} onChange={e=>setForm({...form,next_due_hours:e.target.value})}/></label>
         <label>Next due km<input type="number" min="0" step="1" value={form.next_due_km} onChange={e=>setForm({...form,next_due_km:e.target.value})}/></label>
         <label className="span-2">Procedure / scope<textarea rows={4} value={form.description} onChange={e=>setForm({...form,description:e.target.value})} placeholder="Describe checks, service scope and reference manual section."/></label>
-      </div><div className="form-actions"><button type="button" className="secondary-outline" onClick={()=>setShowForm(false)}>Cancel</button><button className="primary-button action-button" disabled={saving}>{saving?'Saving…':'Create plan'}</button></div>
+      </div><div className="warning-box"><strong>Controlled interval requirement</strong><p>Only use OEM, approved RUEL or documented engineering intervals. The automation engine will never invent maintenance frequencies.</p></div><div className="form-actions"><button type="button" className="secondary-outline" onClick={()=>setShowForm(false)}>Cancel</button><button className="primary-button action-button" disabled={saving}>{saving?'Saving…':'Create plan'}</button></div>
     </form>}
+    <PMAutomationPanel units={units} role={role} onChanged={load}/>
     <div className="toolbar"><input className="search-input" placeholder="Search plan or asset…" value={query} onChange={e=>setQuery(e.target.value)}/><select value={unitFilter} onChange={e=>setUnitFilter(e.target.value)}><option value="all">All business units</option>{units.map(u=><option key={u.id} value={u.id}>{u.name}</option>)}</select><span className="count-chip">{visible.length} plans</span></div>
     {loading?<div className="loading-panel">Loading maintenance plans…</div>:visible.length===0?<div className="empty-table">No maintenance plans recorded for this filter.</div>:<div className="table-wrap"><table className="data-table"><thead><tr><th>Plan</th><th>Asset</th><th>Business unit</th><th>Type</th><th>Trigger</th><th>Next due</th><th>Status</th></tr></thead><tbody>{visible.map(p=>{const a=assetFor(p.asset_id); const overdue=!!p.next_due_date&&p.next_due_date<today; return <tr key={p.id}><td><strong>{p.title}</strong><small>{p.description||'Scope pending'}</small></td><td><strong>{a?.asset_code||'—'}</strong><small>{a?.name||''}</small></td><td>{a?unitName(a.business_unit_id):'—'}</td><td><span className="status-pill active">{p.plan_type}</span></td><td>{p.trigger_basis}<small>{[p.interval_days&&`${p.interval_days} d`,p.interval_hours&&`${p.interval_hours} h`,p.interval_km&&`${p.interval_km} km`].filter(Boolean).join(' · ')||'Condition based'}</small></td><td>{p.next_due_date||'—'}<small>{[p.next_due_hours&&`${p.next_due_hours} h`,p.next_due_km&&`${p.next_due_km} km`].filter(Boolean).join(' · ')}</small></td><td><span className={`priority-pill ${overdue?'critical':'low'}`}>{overdue?'Overdue':'Active'}</span></td></tr>})}</tbody></table></div>}
   </div>
