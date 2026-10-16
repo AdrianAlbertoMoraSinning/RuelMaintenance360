@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase'
 import type { BusinessUnit } from './AssetsSection'
 import EquipmentDiagnosticsSection from './EquipmentDiagnosticsSection'
 import DeviceConnectorAgentPanel from './DeviceConnectorAgentPanel'
+import AdapterCertificationMatrix from './AdapterCertificationMatrix'
 
 type Props={units:BusinessUnit[];role:string}
 
@@ -13,5 +14,6 @@ export default function EquipmentDiagnosticsEmbedded({units,role}:Props){
   return <>
     <EquipmentDiagnosticsSection units={units} userId={userId} role={role}/>
     <DeviceConnectorAgentPanel units={units} role={role}/>
+    <AdapterCertificationMatrix units={units} role={role}/>
   </>
 }
