@@ -11,6 +11,7 @@ const requiredFiles = [
   'src/modules/EquipmentDiagnosticsSection.tsx',
   'src/modules/EquipmentDiagnosticsEmbedded.tsx',
   'src/modules/DeviceConnectorAgentPanel.tsx',
+  'src/modules/SystemReadinessAuditSection.tsx',
   'src/modules/ApprovalsDashboard.tsx',
   'src/modules/ApprovalsDashboardLive.tsx',
   'src/modules/WorkOrdersSection.tsx',
@@ -35,7 +36,7 @@ const requiredFiles = [
 ]
 
 const requiredMarkers = {
-  'src/App.tsx': ['BusinessUnitsPerformance','MaintenancePlanningSection','ApprovalsDashboard','TechnicalAssistantSection','Business Unit Performance','Calendar & Backlog','My Approvals'],
+  'src/App.tsx': ['BusinessUnitsPerformance','MaintenancePlanningSection','ApprovalsDashboard','TechnicalAssistantSection','SystemReadinessAuditSection','Business Unit Performance','Calendar & Backlog','My Approvals','System Readiness Audit'],
   'src/modules/BusinessUnitsPerformance.tsx': ['Operational Performance by Unit','Work order status','Backlog aging','Downtime trend','Maintenance cost breakdown','Inspection results'],
   'src/modules/MaintenancePlanningSection.tsx': ['PMCompliancePanel','technician_capacity','planned_labour_hours','Planned vs unplanned','Current Week Technician Capacity','Capacity Outlook'],
   'src/modules/PMCompliancePanel.tsx': ['pm_work_order_performance','pm_forecast','Compliance & 90-Day Forecast','PM compliance','Overdue PM WOs'],
@@ -46,12 +47,14 @@ const requiredMarkers = {
   'src/modules/EquipmentDiagnosticsSection.tsx': ['diagnostic_gateways','diagnostic_fault_events','diagnostic_ingestion_log','ingest_diagnostic_payload','create_diagnostic_fault_work_order','Equipment Diagnostics Gateway','CAN / J1939','PLC / Modbus','Telematics API'],
   'src/modules/EquipmentDiagnosticsEmbedded.tsx': ['EquipmentDiagnosticsSection','DeviceConnectorAgentPanel'],
   'src/modules/DeviceConnectorAgentPanel.tsx': ['diagnostic_device_agents','diagnostic_oem_profiles','diagnostic_fault_code_library','diagnostic_asset_identities','diagnostic_device_sessions','register_device_session','confirm_device_session_asset','Device Connector / Mobile Diagnostic Agent','Automatic machine matching','OEM Profiles & Fault Library'],
+  'src/modules/SystemReadinessAuditSection.tsx': ['system_readiness_audit','End-to-End Audit','Critical findings','Run audit'],
   'device-agent/README.md': ['Device Connector Agent','Machine identity','Offline queue','CAN / SAE J1939','PLC / Modbus'],
   'device-agent/src/normalizer.ts': ['NormalizedDiagnosticBatch','MachineIdentity','DiagnosticTransportAdapter','OfflineDiagnosticQueue','normalizeJsonPayload'],
+  'src/modules/ApprovalsDashboardLive.tsx': ['Approval aging','No automatic SLA classification','Informational aging only'],
   'src/modules/WorkOrdersSection.tsx': ['execution_approval_status','approve_work_order_execution_manager','approve_work_order_execution_super_admin','WorkOrderEvidence','WorkOrderResources','Create work order & plan parts','additional parts can also be added later'],
   'src/modules/WorkOrderResources.tsx': ['add_work_order_part_requirement','issue_part_to_work_order','return_part_from_work_order','Dynamic material planning','quantity_available','quantity_on_order'],
   'src/modules/InventorySection.tsx': ['inventory_stock_summary','inventory_kardex','inventory_counts','transfer_inventory_part','inventory_purchase_orders','inventory_purchase_order_lines','receive_purchase_order_line','inventory_replenishment_report','inventory_responsibility_history','Parts, Warehouses & Kardex','Purchase Orders & Receipts','Physical Counts','Warehouses & Storage Positions','Custody History'],
-  'src/modules/InspectionsSection.tsx': ['OFFLINE_KEY','offline','Sync now'],
+  'src/modules/InspectionsSection.tsx': ['OFFLINE_KEY','LEGACY_OFFLINE_KEY','submit_inspection','serverInspectionId','Sync now','Saved field photos','idempotent offline synchronization'],
   'src/modules/AdminSection.tsx': ['corporate_manager_id','maintenance_approval_settings','InspectionTemplateAdmin','Corporate Cost Authorization Threshold'],
   'src/modules/DocumentsSection.tsx': ['tesseract.js','document_chunks','OCR'],
   'index.html': ['/favicon.svg','/apple-touch-icon.png','/mstile-150x150.png','/safari-pinned-tab.svg','/site.webmanifest'],
