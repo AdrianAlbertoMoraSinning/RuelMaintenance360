@@ -29,6 +29,7 @@ const requiredMarkers = {
   'src/modules/AdminSection.tsx':['corporate_manager_id','maintenance_approval_settings','InspectionTemplateAdmin','Corporate Cost Authorization Threshold'],
   'src/modules/DocumentsSection.tsx':['tesseract.js','document_chunks','openControlledDocument','MOC virtual training document','visual MOC training previews'],
   'src/modules/TechnicalAssistantSection.tsx':['search_document_chunks_multilingual','openControlledDocument','Ask in English or Spanish','language-neutral indexed search'],
+  'src/modules/ReportsSection.tsx':['Server-authoritative distribution','Regenerate & send','server independently regenerates','External scheduler invocation still must be configured separately','last_attempt_at'],
   'src/lib/openControlledDocument.ts':['moc-training/','MOC TRAINING PREVIEW','document_chunks','createSignedUrl'],
   'index.html':['/favicon.svg','/apple-touch-icon.png','/mstile-150x150.png','/safari-pinned-tab.svg','/site.webmanifest'],
   'public/site.webmanifest':['/android-chrome-192x192.png','/android-chrome-512x512.png']
