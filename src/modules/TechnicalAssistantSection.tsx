@@ -1,5 +1,6 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react'
 import { supabase } from '../lib/supabase'
+import { openControlledDocument } from '../lib/openControlledDocument'
 import type { BusinessUnit } from './AssetsSection'
 import './asset-profile.css'
 
@@ -36,7 +37,7 @@ export default function TechnicalAssistantSection({units,userId}:Props){
   const assetOrders=useMemo(()=>orders.filter(w=>w.asset_id===assetId),[orders,assetId])
 
   function docTitle(id:string){const d=documents.find(x=>x.id===id);return d?.title||'Indexed document'}
-  function matchingWorkOrders(q:string){const terms=q.toLowerCase().split(/\s+/).filter(x=>x.length>2);if(!terms.length)return [];return assetOrders.filter(w=>{const text=`${w.title} ${w.problem_description||''} ${w.diagnosis||''} ${w.corrective_action||''}`.toLowerCase();return terms.some(t=>text.includes(t))}).slice(0,6)}
+  function matchingWorkOrders(q:string){const terms=q.toLowerCase().split(/\s+/).map(x=>x.replace(/[^\p{L}\p{N}_-]/gu,'')).filter(x=>x.length>2);if(!terms.length)return [];return assetOrders.filter(w=>{const text=`${w.title} ${w.problem_description||''} ${w.diagnosis||''} ${w.corrective_action||''}`.toLowerCase();return terms.some(t=>text.includes(t))}).slice(0,6)}
 
   function buildSources(found:Chunk[],related:WorkOrder[]){
     const manual:Source[]=found.slice(0,8).map(c=>({id:`chunk:${c.id}`,kind:'manual',documentId:c.document_id,label:`${docTitle(c.document_id)}${c.page_number?` · page ${c.page_number}`:''}`,content:c.content}))
@@ -48,21 +49,27 @@ export default function TechnicalAssistantSection({units,userId}:Props){
     if(!sources.length)return 'No approved manual evidence or related RUEL maintenance history was found for this question. Add or index the correct technical documents before relying on the assistant.'
     const manual=sources.filter(s=>s.kind==='manual').slice(0,3);const history=sources.filter(s=>s.kind==='work_order').slice(0,2)
     const lines=['Evidence found for this asset:']
-    manual.forEach((s,i)=>lines.push(`\n[S${sources.indexOf(s)+1}] ${s.content.slice(0,520)}${s.content.length>520?'…':''}`))
+    manual.forEach(s=>lines.push(`\n[S${sources.indexOf(s)+1}] ${s.content.slice(0,520)}${s.content.length>520?'…':''}`))
     if(history.length){lines.push('\nRUEL maintenance history:');history.forEach(s=>lines.push(`\n[S${sources.indexOf(s)+1}] ${s.content.slice(0,420)}${s.content.length>420?'…':''}`))}
     lines.push('\n\nThis is an evidence-first extractive answer. Review the cited source before performing work; follow OEM instructions, RUEL safety requirements and LOTO.')
     return lines.join('')
   }
 
+  async function retrieveChunks(docIds:string[],q:string){
+    if(!docIds.length)return [] as Chunk[]
+    const {data,error}=await supabase.rpc('search_document_chunks_multilingual',{p_document_ids:docIds,p_query:q,p_limit:20})
+    if(!error&&data?.length)return (data as any[]).map(x=>({id:x.id,document_id:x.document_id,page_number:x.page_number,section_title:x.section_title,content:x.content})) as Chunk[]
+    const terms=q.toLowerCase().split(/\s+/).map(x=>x.replace(/[^\p{L}\p{N}_-]/gu,'')).filter(x=>x.length>2).slice(0,6)
+    if(!terms.length)return []
+    const or=terms.map(t=>`content.ilike.%${t}%`).join(',')
+    const fallback=await supabase.from('document_chunks').select('id,document_id,page_number,section_title,content').in('document_id',docIds).or(or).limit(20)
+    return (fallback.data||[]) as Chunk[]
+  }
+
   async function search(e:FormEvent){
     e.preventDefault();if(!assetId||!question.trim()||!selected)return
     setSearching(true);setMessage('');setSearched(true);setAnswer('');setAnswerSources([])
-    const docIds=assetDocuments.map(d=>d.id);let found:Chunk[]=[]
-    if(docIds.length){
-      const terms=question.trim().split(/\s+/).filter(x=>x.length>2).slice(0,7);const query=terms.length?terms.join(' '):question.trim()
-      const {data,error}=await supabase.from('document_chunks').select('id,document_id,page_number,section_title,content').in('document_id',docIds).textSearch('content',query,{type:'websearch',config:'english'}).limit(20)
-      if(error){const fallback=await supabase.from('document_chunks').select('id,document_id,page_number,section_title,content').in('document_id',docIds).ilike('content',`%${question.trim().slice(0,80)}%`).limit(20);found=(fallback.data||[]) as Chunk[]}else found=(data||[]) as Chunk[]
-    }
+    const docIds=assetDocuments.map(d=>d.id);const found=await retrieveChunks(docIds,question.trim())
     setChunks(found)
     const related=matchingWorkOrders(question);const sources=buildSources(found,related);setAnswerSources(sources)
     let finalAnswer=extractiveAnswer(sources);let mode='extractive_cited'
@@ -76,17 +83,17 @@ export default function TechnicalAssistantSection({units,userId}:Props){
   }
 
   const matchingOrders=searched?matchingWorkOrders(question):[]
-  async function openDocument(documentId:string){const d=documents.find(x=>x.id===documentId);if(!d)return;const {data,error}=await supabase.storage.from('ruel-documents').createSignedUrl(d.storage_path,120);if(error||!data?.signedUrl){setMessage(error?.message||'Unable to open source document.');return}window.open(data.signedUrl,'_blank','noopener,noreferrer')}
+  async function openDocument(documentId:string){const d=documents.find(x=>x.id===documentId);if(!d)return;setMessage('');await openControlledDocument(d,setMessage)}
   function unitName(id:string){return units.find(u=>u.id===id)?.name||'Assigned unit'}
 
   return <div>
-    <div className="hero-row compact-hero"><div><span className="eyebrow">Grounded Technical Intelligence</span><h1>Technical Assistant</h1><p className="muted">Ask by asset and receive a source-cited answer grounded in controlled manuals, OCR evidence and actual RUEL maintenance history.</p></div></div>
+    <div className="hero-row compact-hero"><div><span className="eyebrow">Grounded Technical Intelligence</span><h1>Technical Assistant</h1><p className="muted">Ask in English or Spanish by asset and receive a source-cited answer grounded in controlled manuals, OCR evidence and actual RUEL maintenance history.</p></div></div>
     <div className="warning-box"><strong>Safety boundary</strong><p>This workspace does not authorize repairs, override lockout/tagout, replace qualified-person judgment, or declare equipment safe. Follow OEM procedures and RUEL safety rules.</p></div>
     {message&&<div className="error-box">{message}</div>}
     <form className="data-form assistant-query" onSubmit={search}>
       <div className="form-grid">
         <label>Asset<select required value={assetId} onChange={e=>{setAssetId(e.target.value);setSearched(false);setChunks([]);setAnswer('');setAnswerSources([])}}><option value="">Select asset</option>{assets.map(a=><option key={a.id} value={a.id}>{a.asset_code} — {a.name}</option>)}</select></label>
-        <label className="span-2">Technical question<input required value={question} onChange={e=>setQuestion(e.target.value)} placeholder="e.g. What does the OEM manual say about this hydraulic pressure fault?"/></label>
+        <label className="span-2">Technical question<input required value={question} onChange={e=>setQuestion(e.target.value)} placeholder="e.g. What does the OEM manual say about this hydraulic pressure fault? / ¿Qué indica el manual sobre esta falla?"/></label>
       </div>
       <div className="form-actions"><button className="primary-button action-button" disabled={searching||loading}>{searching?'Building cited answer…':'Ask Technical Assistant'}</button></div>
     </form>
@@ -99,6 +106,6 @@ export default function TechnicalAssistantSection({units,userId}:Props){
         <section className="profile-panel"><div className="section-heading small-heading"><div><span className="eyebrow">RUEL history</span><h3>Related work orders</h3></div><span className="count-chip">{matchingOrders.length}</span></div>{matchingOrders.length===0?<div className="empty-table compact">No prior work-order text matched the question.</div>:<div className="timeline">{matchingOrders.map(w=><div className="timeline-item" key={w.id}><span className="timeline-type work_order">WO #{w.work_order_number}</span><div><strong>{w.title}</strong><small>{new Date(w.created_at).toLocaleDateString()} · {w.status.replaceAll('_',' ')}</small>{w.diagnosis&&<p><b>Diagnosis:</b> {w.diagnosis}</p>}{w.corrective_action&&<p><b>Action:</b> {w.corrective_action}</p>}{!w.diagnosis&&!w.corrective_action&&w.problem_description&&<p>{w.problem_description}</p>}</div></div>)}</div>}</section>
       </div>
     </>}
-    <div className="phase-banner">The answer engine never answers from memory alone: it requires controlled RUEL evidence. If the external AI provider is not configured, the system automatically falls back to an extractive cited answer instead of inventing a response.</div>
+    <div className="phase-banner">Retrieval uses a language-neutral indexed search for English/Spanish technical terms, with controlled virtual MOC previews when no storage object exists. The answer engine never answers from memory alone; if the external AI provider is not configured, it falls back to an extractive cited answer instead of inventing a response.</div>
   </div>
 }
