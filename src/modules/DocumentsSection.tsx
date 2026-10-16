@@ -2,6 +2,7 @@ import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from 'react'
 import { GlobalWorkerOptions, getDocument } from 'pdfjs-dist'
 import { createWorker, type Worker } from 'tesseract.js'
 import { supabase } from '../lib/supabase'
+import { openControlledDocument } from '../lib/openControlledDocument'
 import type { BusinessUnit } from './AssetsSection'
 
 GlobalWorkerOptions.workerSrc = new URL('pdfjs-dist/build/pdf.worker.min.mjs', import.meta.url).toString()
@@ -106,6 +107,7 @@ export default function DocumentsSection({units,userId,role}:Props){
   async function retryIndex(row:DocumentRow){
     setSaving(true);setMessage('')
     try{
+      if(row.storage_path.startsWith('moc-training/'))throw new Error('MOC virtual documents already use indexed training chunks and do not require OCR.')
       const {data,error}=await supabase.storage.from('ruel-documents').download(row.storage_path);if(error||!data)throw error||new Error('Unable to download source file.')
       const filename=row.storage_path.split('/').pop()||'document.pdf';let mime=data.type;if(!mime){mime=filename.toLowerCase().endsWith('.pdf')?'application/pdf':/\.(jpe?g|png|webp)$/i.test(filename)?'image/jpeg':'text/plain'}
       const source=new File([data],filename,{type:mime});const result=await indexDocument(row.id,source);setMessage(result==='ocr_indexed'?'Document OCR-indexed successfully.':result==='indexed'?'Document indexed successfully.':result==='unsupported'?'Automatic indexing is not supported for this file type.':'Indexing failed.');await load()
@@ -113,12 +115,12 @@ export default function DocumentsSection({units,userId,role}:Props){
     setSaving(false)
   }
 
-  async function openDocument(row:DocumentRow){setMessage('');const {data,error}=await supabase.storage.from('ruel-documents').createSignedUrl(row.storage_path,120);if(error||!data?.signedUrl){setMessage(error?.message||'Unable to open document.');return}window.open(data.signedUrl,'_blank','noopener,noreferrer')}
+  async function openDocument(row:DocumentRow){setMessage('');await openControlledDocument(row,setMessage)}
   function fileChanged(e:ChangeEvent<HTMLInputElement>){setFile(e.target.files?.[0]||null)}
 
   return <div>
-    <div className="hero-row compact-hero"><div><span className="eyebrow">Controlled Technical Library</span><h1>Documents & Manuals</h1><p className="muted">OEM manuals, procedures, certificates and drawings linked to the correct unit and asset, with text extraction and OCR evidence for the Technical Assistant.</p></div>{canUpload&&<button className="primary-button action-button" onClick={()=>setShowForm(!showForm)}>+ Upload document</button>}</div>
-    {message&&<div className={/successfully|controlled original/i.test(message)?'success-box':'error-box'}>{message}</div>}
+    <div className="hero-row compact-hero"><div><span className="eyebrow">Controlled Technical Library</span><h1>Documents & Manuals</h1><p className="muted">OEM manuals, procedures, certificates and drawings linked to the correct unit and asset, with text extraction, OCR evidence and visual MOC training previews for the Technical Assistant.</p></div>{canUpload&&<button className="primary-button action-button" onClick={()=>setShowForm(!showForm)}>+ Upload document</button>}</div>
+    {message&&<div className={/successfully|controlled original|training/i.test(message)?'success-box':'error-box'}>{message}</div>}
     {progress&&<div className="phase-banner">{progress} Scanned manuals can take several minutes depending on page count.</div>}
     {showForm&&<form className="data-form" onSubmit={upload}>
       <div className="form-title"><div><span className="eyebrow">Controlled document</span><h2>Upload document</h2></div><button className="icon-button" type="button" onClick={()=>setShowForm(false)}>×</button></div>
@@ -135,7 +137,7 @@ export default function DocumentsSection({units,userId,role}:Props){
       <div className="form-actions"><button type="button" className="secondary-outline" onClick={()=>setShowForm(false)}>Cancel</button><button className="primary-button action-button" disabled={saving}>{saving?'Uploading / indexing…':'Upload document'}</button></div>
     </form>}
     <div className="toolbar"><input className="search-input" placeholder="Search title, type, revision, indexing status…" value={query} onChange={e=>setQuery(e.target.value)}/><select value={unitFilter} onChange={e=>setUnitFilter(e.target.value)}><option value="all">All business units</option>{units.map(u=><option key={u.id} value={u.id}>{u.name}</option>)}</select><span className="count-chip">{visible.length} documents</span></div>
-    {loading?<div className="loading-panel">Loading document library…</div>:visible.length===0?<div className="empty-table">No documents recorded for the current filter.</div>:<div className="table-wrap"><table className="data-table"><thead><tr><th>Document</th><th>Unit</th><th>Asset</th><th>Type</th><th>Revision</th><th>Indexing</th><th></th></tr></thead><tbody>{visible.map(r=><tr key={r.id}><td><strong>{r.title}</strong><small>{r.manufacturer||'Manufacturer not specified'}</small></td><td>{unitName(r.business_unit_id)}</td><td>{assetLabel(r.asset_id)}</td><td>{r.document_type}</td><td>{r.version||'—'}</td><td><span className={`status-pill ${r.indexing_status==='indexed'?'active':r.indexing_status==='failed'?'out_of_service':'standby'}`}>{r.indexing_status}</span><small>{r.indexing_status==='indexed'?`${r.indexed_pages} page(s) searchable`:r.indexing_error||'Awaiting processing'}</small></td><td><div className="row-actions"><button className="secondary-outline mini" onClick={()=>openDocument(r)}>Open</button>{canUpload&&r.indexing_status!=='indexed'&&<button className="secondary-outline mini" disabled={saving} onClick={()=>retryIndex(r)}>Index / OCR</button>}</div></td></tr>)}</tbody></table></div>}
-    <div className="phase-banner">OCR is active for scanned PDFs and image documents. Searchable chunks retain document and page references so Technical Assistant answers can cite the controlled source.</div>
+    {loading?<div className="loading-panel">Loading document library…</div>:visible.length===0?<div className="empty-table">No documents recorded for the current filter.</div>:<div className="table-wrap"><table className="data-table"><thead><tr><th>Document</th><th>Unit</th><th>Asset</th><th>Type</th><th>Revision</th><th>Indexing</th><th></th></tr></thead><tbody>{visible.map(r=><tr key={r.id}><td><strong>{r.title}</strong><small>{r.storage_path.startsWith('moc-training/')?'MOC virtual training document':r.manufacturer||'Manufacturer not specified'}</small></td><td>{unitName(r.business_unit_id)}</td><td>{assetLabel(r.asset_id)}</td><td>{r.document_type}</td><td>{r.version||'—'}</td><td><span className={`status-pill ${r.indexing_status==='indexed'?'active':r.indexing_status==='failed'?'out_of_service':'standby'}`}>{r.indexing_status}</span><small>{r.indexing_status==='indexed'?`${r.indexed_pages} page(s) searchable`:r.indexing_error||'Awaiting processing'}</small></td><td><div className="row-actions"><button className="secondary-outline mini" onClick={()=>openDocument(r)}>{r.storage_path.startsWith('moc-training/')?'Preview':'Open'}</button>{canUpload&&r.indexing_status!=='indexed'&&!r.storage_path.startsWith('moc-training/')&&<button className="secondary-outline mini" disabled={saving} onClick={()=>retryIndex(r)}>Index / OCR</button>}</div></td></tr>)}</tbody></table></div>}
+    <div className="phase-banner">OCR is active for scanned PDFs and image documents. MOC virtual records open as clearly marked training previews from their indexed chunks. Searchable chunks retain document and page references so Technical Assistant answers can cite the controlled source.</div>
   </div>
 }
