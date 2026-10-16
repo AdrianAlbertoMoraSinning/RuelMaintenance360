@@ -3,6 +3,7 @@ import { readFileSync, existsSync } from 'node:fs'
 const requiredFiles = [
   'src/modules/BusinessUnitsPerformance.tsx',
   'src/modules/MaintenancePlanningSection.tsx',
+  'src/modules/TechnicianCapacityAdmin.tsx',
   'src/modules/PMCompliancePanel.tsx',
   'src/modules/MaintenancePlansSection.tsx',
   'src/modules/PMAutomationPanel.tsx',
@@ -38,7 +39,8 @@ const requiredFiles = [
 const requiredMarkers = {
   'src/App.tsx': ['BusinessUnitsPerformance','MaintenancePlanningSection','ApprovalsDashboard','TechnicalAssistantSection','SystemReadinessAuditSection','Business Unit Performance','Calendar & Backlog','My Approvals','System Readiness Audit'],
   'src/modules/BusinessUnitsPerformance.tsx': ['Operational Performance by Unit','Work order status','Backlog aging','Downtime trend','Maintenance cost breakdown','Inspection results'],
-  'src/modules/MaintenancePlanningSection.tsx': ['PMCompliancePanel','technician_capacity','planned_labour_hours','Planned vs unplanned','Current Week Technician Capacity','Capacity Outlook'],
+  'src/modules/MaintenancePlanningSection.tsx': ['PMCompliancePanel','TechnicianCapacityAdmin','technician_capacity','user_unit_access','planned_labour_hours','Planned vs unplanned','Current Week Technician Capacity','Capacity Outlook','Indicator drill-down','Completed by scheduled timestamp'],
+  'src/modules/TechnicianCapacityAdmin.tsx': ['Technician Capacity Administration','weekly_capacity_hours','productive_target_pct','user_unit_access','Corporate editable'],
   'src/modules/PMCompliancePanel.tsx': ['pm_work_order_performance','pm_forecast','Compliance & 90-Day Forecast','PM compliance','Overdue PM WOs'],
   'src/modules/MaintenancePlansSection.tsx': ['PMAutomationPanel','MeterReadingsPanel','ConditionMonitoringPanel','EquipmentDiagnosticsEmbedded','Controlled interval requirement'],
   'src/modules/PMAutomationPanel.tsx': ['generate_due_maintenance_work_orders','maintenance_due_board','maintenance_plan_parts','pm_automation_runs','Daily scheduled scan active','Run PM automation','Required parts'],
