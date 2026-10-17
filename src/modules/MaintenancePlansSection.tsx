@@ -34,7 +34,7 @@ export default function MaintenancePlansSection({ units, role }:Props){
     setLoading(true)
     const [{data:a},{data:p}] = await Promise.all([
       supabase.from('assets').select('id,business_unit_id,asset_code,name,asset_category').order('asset_code'),
-      supabase.from('maintenance_plans').select('id,asset_id,plan_type,title,description,trigger_basis,interval_days,interval_km,interval_hours,next_due_date,next_due_km,next_due_hours,active').order('title')
+      supabase.from('maintenance_plans_visible').select('id,asset_id,plan_type,title,description,trigger_basis,interval_days,interval_km,interval_hours,next_due_date,next_due_km,next_due_hours,active').order('title')
     ])
     setAssets((a||[]) as Asset[]); setPlans((p||[]) as Plan[]); setLoading(false)
   }

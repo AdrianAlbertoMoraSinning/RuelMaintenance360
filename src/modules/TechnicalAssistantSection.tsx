@@ -29,7 +29,7 @@ export default function TechnicalAssistantSection({units,userId}:Props){
   useEffect(()=>{async function load(){setLoading(true);const [{data:a},{data:d},{data:w}]=await Promise.all([
     supabase.from('assets').select('id,business_unit_id,asset_code,name,asset_category,manufacturer,model').order('asset_code'),
     supabase.from('documents').select('id,asset_id,business_unit_id,title,document_type,version,manufacturer,storage_path').eq('active',true),
-    supabase.from('work_orders').select('id,asset_id,work_order_number,title,problem_description,diagnosis,corrective_action,status,created_at').order('created_at',{ascending:false}).limit(500)
+    supabase.from('work_orders_visible').select('id,asset_id,work_order_number,title,problem_description,diagnosis,corrective_action,status,created_at').order('created_at',{ascending:false}).limit(500)
   ]);setAssets((a||[]) as Asset[]);setDocuments((d||[]) as DocumentRow[]);setOrders((w||[]) as WorkOrder[]);setLoading(false)}load()},[])
 
   const selected=assets.find(a=>a.id===assetId)||null

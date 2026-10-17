@@ -40,6 +40,6 @@ Only Guy Munden, Marcel Ruel, Sylvain Ruel, and Adrian Mora are real users at th
 
 ## Remaining commissioning work
 
-This change does **not** conceal monetary fields from Operators or Technicians. Those fields currently share records with operational data. A separate API/data-model change and all relevant readers/exports must be reviewed before that restriction can be claimed. Do not certify the full cost-visibility matrix as complete.
+The initial row-scope policy did not conceal monetary columns from Operators or Technicians. The subsequent financial read API and coordinated column-privilege cutover are documented in `FINANCIAL_ACCESS.md`; certify the matrix only after that cutover and its transactional tests succeed.
 
 Reporting Manager and spending approval authority also remain separate decisions; adding a reporting line must not silently grant approval authority.
