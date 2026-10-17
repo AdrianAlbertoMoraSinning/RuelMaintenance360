@@ -33,7 +33,7 @@ const requiredMarkers = {
   'src/modules/InspectionsSection.tsx':['OFFLINE_KEY','LEGACY_OFFLINE_KEY','submit_inspection','serverInspectionId','Sync now','Saved field photos','idempotent offline synchronization','IndexedDB'],
   'src/lib/offlineInspectionStore.ts':['indexedDB.open','inspection_drafts','migrateOfflineInspectionLocalStorage','replaceOfflineInspectionDrafts'],
   'src/modules/InspectionTemplateAdmin.tsx':['create_inspection_template_version','Published versions are immutable','Publish new version','Version history'],
-  'src/modules/AdminSection.tsx':['corporate_manager_id','maintenance_approval_settings','InspectionTemplateAdmin','Corporate Cost Authorization Threshold','ohs_admin','Primary OHS Administrator','set_primary_ohs_administrator','Create OHS Administrator'],
+  'src/modules/AdminSection.tsx':['corporate_manager_id','business_unit_approval_settings','InspectionTemplateAdmin','Business Unit Cost Authorization Thresholds','set_business_unit_approval_threshold','ohs_admin','Primary OHS Administrator','set_primary_ohs_administrator','Create OHS Administrator'],
   'src/modules/DocumentsSection.tsx':['tesseract.js','document_chunks','openControlledDocument','MOC virtual training document','visual MOC training previews'],
   'src/modules/TechnicalAssistantSection.tsx':['search_document_chunks_multilingual','openControlledDocument','Ask in English or Spanish','language-neutral indexed search'],
   'src/modules/ReportsSection.tsx':['Server-authoritative distribution','Regenerate & send','server independently regenerates','External scheduler invocation still must be configured separately','last_attempt_at'],

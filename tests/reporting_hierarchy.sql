@@ -56,7 +56,7 @@ begin
 
   select a.id,a.business_unit_id into strict asset,unit_id from public.assets a
   join public.business_units b on b.id=a.business_unit_id where b.code='HEAVY-EQP' order by a.id limit 1;
-  update public.maintenance_approval_settings set corporate_approval_threshold=1000;
+  perform public.set_business_unit_approval_threshold(unit_id,1000);
   insert into public.work_orders(asset_id,business_unit_id,title,status,type,priority,assigned_to,requested_by,estimated_cost)
   values(asset,unit_id,'[QA rollback] Reporting hierarchy approval','open','corrective','low',employee,auth.uid(),100)
   returning id into order_id;

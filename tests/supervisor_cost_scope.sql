@@ -16,7 +16,7 @@ set local request.jwt.claims = '{"sub":"53bc4a33-6d79-4164-8937-b19c757d56ac","r
 do $qa$ begin
  if not exists(select 1 from public.work_orders_visible where id=current_setting('ruel.qa.own_wo')::uuid and estimated_cost=123.45) then raise exception 'Supervisor cannot read own-unit cost'; end if;
  if exists(select 1 from public.work_orders where id=current_setting('ruel.qa.other_wo')::uuid) then raise exception 'Supervisor can read cross-unit cost via requester/assignee'; end if;
- if exists(select 1 from public.maintenance_approval_settings) then raise exception 'Supervisor can read confidential corporate threshold'; end if;
+ if exists(select 1 from public.business_unit_approval_settings) then raise exception 'Supervisor can read confidential corporate threshold'; end if;
  if private.can_approve_unit((select business_unit_id from public.work_orders where id=current_setting('ruel.qa.own_wo')::uuid)) then raise exception 'Cost viewing unexpectedly grants approval'; end if;
 end $qa$;
 set local request.jwt.claims = '{"sub":"2fb0bab9-a296-499c-80fe-fdb87f1127ce","role":"authenticated"}';
