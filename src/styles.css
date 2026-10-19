@@ -204,3 +204,20 @@ input:focus, select:focus, textarea:focus { border-color: var(--yellow-dark); bo
   .form-actions { position:sticky; bottom:0; background:white; padding-bottom:4px; }
   input,select,textarea { font-size:16px; }
 }
+
+/* Official corporate artwork: preserve aspect ratio and keep clear space. */
+.brand { max-width: 100%; gap: 10px; line-height: 1.2; }
+.brand-logo { display: block; width: 240px; max-width: 100%; height: auto; object-fit: contain; }
+.brand-label { margin: 0; font-size: .65rem; letter-spacing: .2em; }
+.brand--dark { padding: 12px; background: #171717; color: #fff; border-radius: 4px; }
+.brand--dark .brand-label { color: #f4c430; }
+.sidebar-brand { padding: 16px; min-height: 118px; }
+.sidebar-brand .brand { width: 100%; }
+.sidebar-brand .brand-logo { width: 190px; }
+.sidebar-brand .brand-label { font-size: .61rem; }
+.boot-screen .brand { width: min(340px, calc(100vw - 48px)); align-items: center; }
+.boot-screen .brand-logo { width: 310px; }
+.login-card { background: #fff; }
+.login-card .brand-logo { width: 290px; }
+.brand--compact .brand-logo { width: 112px; }
+.unit-card .brand-label { font-size: .52rem; letter-spacing: .14em; }

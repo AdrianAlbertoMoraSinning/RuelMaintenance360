@@ -1,10 +1,8 @@
+import Brand from './Brand'
 import { useState, type FormEvent } from 'react'
 import { supabase } from '../lib/supabase'
 import { saveNewPassword, type PasswordPurpose } from '../lib/authFlow'
 
-function WelcomeBrand() {
-  return <div className="brand" aria-label="RUEL MAINTENANCE 360"><span className="brand-ruel">RUEL</span><span className="brand-label">MAINTENANCE 360</span></div>
-}
 
 export default function PasswordSetup({ email, purpose, onComplete, onCancel }: {
   email?: string; purpose: PasswordPurpose; onComplete: () => void; onCancel: () => Promise<void>
@@ -25,7 +23,7 @@ export default function PasswordSetup({ email, purpose, onComplete, onCancel }: 
     try { await onCancel() } catch { setError('Unable to sign out. Please try again.'); setBusy(false) }
   }
   return <main className="login-page"><section className="login-card">
-    <WelcomeBrand/><p className="eyebrow">{purpose === 'invite' ? 'Welcome to RUEL' : 'Secure account recovery'}</p>
+    <Brand label="MAINTENANCE 360"/><p className="eyebrow">{purpose === 'invite' ? 'Welcome to RUEL' : 'Secure account recovery'}</p>
     <h1>{purpose === 'invite' ? 'Create your password' : 'Set a new password'}</h1>
     <p className="muted">{email ? <>Account: <strong>{email}</strong>. </> : null}Choose a password to access Maintenance 360.</p>
     <form onSubmit={submit}>
@@ -46,7 +44,7 @@ export function AuthLinkProblem({ onReturn }: { onReturn: () => Promise<void> })
     setBusy(true)
     try { await onReturn() } catch { setError('Unable to sign out. Please try again.'); setBusy(false) }
   }
-  return <main className="login-page"><section className="login-card"><WelcomeBrand/>
+  return <main className="login-page"><section className="login-card"><Brand label="MAINTENANCE 360"/>
     <p className="eyebrow">Account access</p><h1>This link could not be verified</h1>
     <p className="muted">Your invitation or recovery link may have expired or already been used. Ask your RUEL administrator for a new link. If you already created your password, return to sign in.</p>
     {error && <div className="error-box" role="alert">{error}</div>}
