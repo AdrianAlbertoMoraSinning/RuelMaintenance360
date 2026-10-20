@@ -8,7 +8,7 @@
     "regression-check": "node scripts/regression-check.mjs",
     "build": "npm run regression-check && tsc -b && vite build",
     "preview": "vite preview",
-    "test:auth": "node --experimental-strip-types --test tests/authFlow.test.mjs"
+    "test:auth": "node --experimental-strip-types --test tests/authFlow.test.mjs tests/phoneOnboarding.test.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.58.0",

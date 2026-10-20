@@ -19,12 +19,54 @@ Deno.serve(async (req)=>{
     const callerClient=createClient(url,anon,{global:{headers:{Authorization:authHeader}}})
     const {data:{user},error:userError}=await callerClient.auth.getUser()
     if(userError||!user) return new Response(JSON.stringify({error:'Unauthorized'}),{status:401,headers:cors})
-    const admin=createClient(url,service)
+    const admin=createClient(url,service,{auth:{persistSession:false,autoRefreshToken:false}})
     const {data:caller}=await admin.from('profiles').select('id,role,active').eq('id',user.id).single()
     if(!caller?.active||!['super_admin','it_admin'].includes(caller.role)) return new Response(JSON.stringify({error:'Administrator access required'}),{status:403,headers:cors})
 
     const body=await req.json()
     const action=String(body.action||'')
+
+    if(action==='activate_phone_onboarding'){
+      const rosterId=String(body.onboarding_id||'')
+      const {data:roster,error:rosterError}=await admin.from('personnel_onboarding').select('*').eq('id',rosterId).single()
+      if(rosterError||!roster)return new Response(JSON.stringify({error:'Personnel record not found'}),{status:404,headers:cors})
+      if(roster.role!=='operator'||!roster.phone||!/^\+[1-9]\d{7,14}$/.test(roster.phone))return new Response(JSON.stringify({error:'A registered operator with a valid mobile number is required'}),{status:400,headers:cors})
+      const {data:manager}=await admin.from('profiles').select('id,role,active').eq('id',roster.reporting_manager_id).single()
+      const {data:unitAccess}=await admin.from('user_unit_access').select('user_id').eq('user_id',roster.reporting_manager_id).eq('business_unit_id',roster.business_unit_id).maybeSingle()
+      if(!manager?.active||!['unit_supervisor','corporate_manager','super_admin'].includes(manager.role)||!unitAccess)return new Response(JSON.stringify({error:'An active reporting manager in this unit is required'}),{status:400,headers:cors})
+      let newId=roster.profile_id
+      if(!newId){
+        const {data:existing}=await admin.from('profiles').select('id').eq('phone',roster.phone).maybeSingle()
+        if(existing)return new Response(JSON.stringify({error:'Mobile number already belongs to another profile. Review the existing account.'}),{status:409,headers:cors})
+        const {data:created,error:createError}=await admin.auth.admin.createUser({phone:roster.phone,phone_confirm:false,user_metadata:{full_name:roster.full_name}})
+        if(createError)throw createError
+        newId=created.user?.id
+        if(!newId)throw new Error('Unable to create phone account')
+        // Retain identity immediately: retry resumes this exact Auth account.
+        const {error:linkError}=await admin.from('personnel_onboarding').update({profile_id:newId,status:'pending_invitation'}).eq('id',rosterId)
+        if(linkError)throw linkError
+      }
+      const {data:identity,error:identityError}=await admin.auth.admin.getUserById(newId)
+      if(identityError||identity.user?.phone?.replace(/^\+/,'')!==roster.phone.slice(1))throw new Error('Registered phone does not match the authentication account')
+      if(roster.status==='active')return new Response(JSON.stringify({error:'This operator is already activated. Use the normal sign-in screen.'}),{status:409,headers:cors})
+      const {error:profileError}=await admin.from('profiles').upsert({id:newId,phone:roster.phone,full_name:roster.full_name,role:'operator',personnel_category:'operator',position_title:roster.position_title||'Concrete Plant Operator',corporate_manager_id:roster.reporting_manager_id,active:true},{onConflict:'id'})
+      if(profileError)throw profileError
+      const {error:accessError}=await admin.from('user_unit_access').upsert({user_id:newId,business_unit_id:roster.business_unit_id,access_role:'operator',can_edit:false,can_approve:false},{onConflict:'user_id,business_unit_id'})
+      if(accessError)throw accessError
+      await admin.from('admin_security_events').insert({actor_user_id:user.id,target_user_id:newId,action:'phone_operator_provisioned'})
+      if(body.send_sms!==true)return new Response(JSON.stringify({ok:true,user_id:newId,sms_sent:false,message:'Phone account created. No SMS sent.'}),{headers:cors})
+      if(roster.sms_sent_at&&Date.now()-Date.parse(roster.sms_sent_at)<60000)return new Response(JSON.stringify({error:'Wait one minute before resending.'}),{status:429,headers:cors})
+      const phoneClient=createClient(url,anon,{auth:{persistSession:false,autoRefreshToken:false}})
+      const {error:smsError}=await phoneClient.auth.signInWithOtp({phone:roster.phone,options:{shouldCreateUser:false}})
+      if(smsError){
+        await admin.from('personnel_onboarding').update({status:'pending_invitation',invitation_error:smsError.message}).eq('id',rosterId)
+        return new Response(JSON.stringify({ok:true,user_id:newId,sms_sent:false,message:'Account created. SMS not sent: '+smsError.message}),{headers:cors})
+      }
+      const {error:sentError}=await admin.from('personnel_onboarding').update({status:'invited',sms_sent_at:new Date().toISOString(),invitation_error:null}).eq('id',rosterId)
+      if(sentError)throw new Error('SMS provider accepted the request, but the personnel status could not be saved. Check before resending.')
+      await admin.from('admin_security_events').insert({actor_user_id:user.id,target_user_id:newId,action:'phone_invitation_sms_requested'})
+      return new Response(JSON.stringify({ok:true,user_id:newId,sms_sent:true,message:'SMS code requested. Delivery is not yet confirmed.'}),{headers:cors})
+    }
 
     if(action==='create_user'){
       const email=String(body.email||'').trim().toLowerCase()

@@ -29,7 +29,7 @@ export function forgetPasswordSetup(storage: SetupStorage | undefined, userId: s
 
 export function cleanAuthPath(pathname: string, search: string) {
   const query = new URLSearchParams(search)
-  for (const key of ['type', 'error', 'error_code', 'error_description', 'access_token', 'refresh_token', 'token_hash', 'code']) query.delete(key)
+  for (const key of ['type', 'error', 'error_code', 'error_description', 'access_token', 'refresh_token', 'token_hash', 'code', 'setup']) query.delete(key)
   return pathname + (query.size ? `?${query.toString()}` : '')
 }
 

@@ -5,7 +5,7 @@ import { saveNewPassword, type PasswordPurpose } from '../lib/authFlow'
 
 
 export default function PasswordSetup({ email, purpose, onComplete, onCancel }: {
-  email?: string; purpose: PasswordPurpose; onComplete: () => void; onCancel: () => Promise<void>
+  email?: string; purpose: PasswordPurpose; onComplete: () => void | Promise<void>; onCancel: () => Promise<void>
 }) {
   const [password, setPassword] = useState('')
   const [confirmation, setConfirmation] = useState('')
@@ -16,7 +16,7 @@ export default function PasswordSetup({ email, purpose, onComplete, onCancel }: 
     setBusy(true); setError('')
     const problem = await saveNewPassword(password, confirmation, attributes => supabase.auth.updateUser(attributes))
     if (problem) { setError(problem); setBusy(false); return }
-    setPassword(''); setConfirmation(''); onComplete()
+    try { await onComplete(); setPassword(''); setConfirmation('') } catch (e) { setError(e instanceof Error ? e.message : 'Password saved. Account activation could not be completed. Please retry.'); setBusy(false) }
   }
   async function cancel() {
     setBusy(true); setError('')
