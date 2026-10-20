@@ -9,3 +9,9 @@ export function normalizePhone(value: string): string {
 export function validSmsCode(value: string): boolean {
   return /^\d{6}$/.test(value.trim())
 }
+
+export function readForwardedInvitation(search: string, hash: string): string | null {
+  if (new URLSearchParams(search).get('setup') !== 'forwarded') return null
+  const token = new URLSearchParams(hash.replace(/^#/, '')).get('invite')
+  return token && /^[a-f0-9]{64}$/.test(token) ? token : null
+}

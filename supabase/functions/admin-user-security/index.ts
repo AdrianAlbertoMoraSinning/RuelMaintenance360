@@ -26,6 +26,19 @@ Deno.serve(async (req)=>{
     const body=await req.json()
     const action=String(body.action||'')
 
+    if(action==='create_forwarded_invitation'){
+      const {data:roster,error:rosterError}=await admin.from('personnel_onboarding').select('profile_id,full_name,phone,reporting_manager_id').eq('id',String(body.onboarding_id||'')).single()
+      if(rosterError||!roster?.profile_id)throw new Error('Create the operator phone account first')
+      const{data:manager}=await admin.from('profiles').select('email,full_name').eq('id',roster.reporting_manager_id).single()
+      if(!manager?.email)throw new Error('Supervisor email is required')
+      const token=Array.from(crypto.getRandomValues(new Uint8Array(32)),x=>x.toString(16).padStart(2,'0')).join('')
+      const hash=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(token))),x=>x.toString(16).padStart(2,'0')).join('')
+      const{data:expires,error}=await admin.rpc('issue_forwarded_operator_invitation',{p_profile_id:roster.profile_id,p_token_hash:hash,p_actor_id:user.id})
+      if(error)throw error
+      await admin.from('admin_security_events').insert({actor_user_id:user.id,target_user_id:roster.profile_id,action:'supervisor_forwarded_invitation_prepared'})
+      return new Response(JSON.stringify({ok:true,activation_url:'https://ruelmaintenance360.netlify.app/?setup=forwarded#invite='+token,expires_at:expires,supervisor_email:manager.email,supervisor_name:manager.full_name,operator_name:roster.full_name,operator_phone:roster.phone,message:'Personal activation link prepared. Forward only to this operator; opening the link does not activate the account.'}),{headers:{...cors,'Cache-Control':'no-store'}})
+    }
+
     if(action==='activate_phone_onboarding'){
       const rosterId=String(body.onboarding_id||'')
       const {data:roster,error:rosterError}=await admin.from('personnel_onboarding').select('*').eq('id',rosterId).single()
@@ -54,18 +67,7 @@ Deno.serve(async (req)=>{
       const {error:accessError}=await admin.from('user_unit_access').upsert({user_id:newId,business_unit_id:roster.business_unit_id,access_role:'operator',can_edit:false,can_approve:false},{onConflict:'user_id,business_unit_id'})
       if(accessError)throw accessError
       await admin.from('admin_security_events').insert({actor_user_id:user.id,target_user_id:newId,action:'phone_operator_provisioned'})
-      if(body.send_sms!==true)return new Response(JSON.stringify({ok:true,user_id:newId,sms_sent:false,message:'Phone account created. No SMS sent.'}),{headers:cors})
-      if(roster.sms_sent_at&&Date.now()-Date.parse(roster.sms_sent_at)<60000)return new Response(JSON.stringify({error:'Wait one minute before resending.'}),{status:429,headers:cors})
-      const phoneClient=createClient(url,anon,{auth:{persistSession:false,autoRefreshToken:false}})
-      const {error:smsError}=await phoneClient.auth.signInWithOtp({phone:roster.phone,options:{shouldCreateUser:false}})
-      if(smsError){
-        await admin.from('personnel_onboarding').update({status:'pending_invitation',invitation_error:smsError.message}).eq('id',rosterId)
-        return new Response(JSON.stringify({ok:true,user_id:newId,sms_sent:false,message:'Account created. SMS not sent: '+smsError.message}),{headers:cors})
-      }
-      const {error:sentError}=await admin.from('personnel_onboarding').update({status:'invited',sms_sent_at:new Date().toISOString(),invitation_error:null}).eq('id',rosterId)
-      if(sentError)throw new Error('SMS provider accepted the request, but the personnel status could not be saved. Check before resending.')
-      await admin.from('admin_security_events').insert({actor_user_id:user.id,target_user_id:newId,action:'phone_invitation_sms_requested'})
-      return new Response(JSON.stringify({ok:true,user_id:newId,sms_sent:true,message:'SMS code requested. Delivery is not yet confirmed.'}),{headers:cors})
+      return new Response(JSON.stringify({ok:true,user_id:newId,message:'Phone account created. Prepare an activation link for the supervisor to forward.'}),{headers:cors})
     }
 
     if(action==='create_user'){
