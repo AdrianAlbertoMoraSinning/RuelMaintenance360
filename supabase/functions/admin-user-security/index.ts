@@ -1,3 +1,5 @@
+import {supervisorInvitationHtml} from '../_shared/supervisorInvitation.ts'
+import {operatorUsername,operatorAuthAddress} from '../_shared/operatorIdentity.ts'
 import { createClient } from 'npm:@supabase/supabase-js@2.58.0'
 
 const cors={
@@ -27,8 +29,11 @@ Deno.serve(async (req)=>{
     const action=String(body.action||'')
 
     if(action==='create_forwarded_invitation'){
+      const sendEmail=body.send_email===true
+      const emailKey=Deno.env.get('RESEND_API_KEY'),emailFrom=Deno.env.get('RUEL_REPORT_FROM')
+      if(sendEmail&&(!emailKey||!emailFrom))return new Response(JSON.stringify({error:'System email delivery is not configured. Prepare the supervisor link and send the supervisor email from your mailbox.'}),{status:503,headers:cors})
       const {data:roster,error:rosterError}=await admin.from('personnel_onboarding').select('profile_id,full_name,phone,reporting_manager_id').eq('id',String(body.onboarding_id||'')).single()
-      if(rosterError||!roster?.profile_id)throw new Error('Create the operator phone account first')
+      if(rosterError||!roster?.profile_id)throw new Error('Create the operator account first')
       const{data:manager}=await admin.from('profiles').select('email,full_name').eq('id',roster.reporting_manager_id).single()
       if(!manager?.email)throw new Error('Supervisor email is required')
       const token=Array.from(crypto.getRandomValues(new Uint8Array(32)),x=>x.toString(16).padStart(2,'0')).join('')
@@ -36,10 +41,16 @@ Deno.serve(async (req)=>{
       const{data:expires,error}=await admin.rpc('issue_forwarded_operator_invitation',{p_profile_id:roster.profile_id,p_token_hash:hash,p_actor_id:user.id})
       if(error)throw error
       await admin.from('admin_security_events').insert({actor_user_id:user.id,target_user_id:roster.profile_id,action:'supervisor_forwarded_invitation_prepared'})
-      return new Response(JSON.stringify({ok:true,activation_url:'https://ruelmaintenance360.netlify.app/?setup=forwarded#invite='+token,expires_at:expires,supervisor_email:manager.email,supervisor_name:manager.full_name,operator_name:roster.full_name,operator_phone:roster.phone,message:'Personal activation link prepared. Forward only to this operator; opening the link does not activate the account.'}),{headers:{...cors,'Cache-Control':'no-store'}})
+      const activationUrl='https://ruelmaintenance360.netlify.app/?setup=forwarded#invite='+token
+      if(sendEmail){
+        const html=supervisorInvitationHtml({supervisor:manager.full_name,operator:roster.full_name,phone:roster.phone,username:operatorUsername(roster.profile_id),url:activationUrl,expires:new Date(expires).toLocaleString('en-CA',{timeZone:'America/Edmonton'})+' (Alberta)'})
+        const delivery=await fetch('https://api.resend.com/emails',{method:'POST',headers:{Authorization:'Bearer '+emailKey,'Content-Type':'application/json'},body:JSON.stringify({from:emailFrom,to:[manager.email],subject:'RUEL: forward '+roster.full_name+'’s activation link',html})})
+        if(!delivery.ok)throw new Error('Supervisor email was not accepted by the email service. Prepare a replacement link before retrying.')
+      }
+      return new Response(JSON.stringify({ok:true,email_sent:sendEmail,activation_url:'https://ruelmaintenance360.netlify.app/?setup=forwarded#invite='+token,expires_at:expires,supervisor_email:manager.email,supervisor_name:manager.full_name,operator_name:roster.full_name,operator_phone:roster.phone,operator_username:operatorUsername(roster.profile_id),message:'Personal activation link prepared. Forward only to this operator; opening the link does not activate the account.'}),{headers:{...cors,'Cache-Control':'no-store'}})
     }
 
-    if(action==='activate_phone_onboarding'){
+    if(action==='activate_operator_onboarding'){
       const rosterId=String(body.onboarding_id||'')
       const {data:roster,error:rosterError}=await admin.from('personnel_onboarding').select('*').eq('id',rosterId).single()
       if(rosterError||!roster)return new Response(JSON.stringify({error:'Personnel record not found'}),{status:404,headers:cors})
@@ -51,23 +62,25 @@ Deno.serve(async (req)=>{
       if(!newId){
         const {data:existing}=await admin.from('profiles').select('id').eq('phone',roster.phone).maybeSingle()
         if(existing)return new Response(JSON.stringify({error:'Mobile number already belongs to another profile. Review the existing account.'}),{status:409,headers:cors})
-        const {data:created,error:createError}=await admin.auth.admin.createUser({phone:roster.phone,phone_confirm:false,user_metadata:{full_name:roster.full_name}})
+        const accountId=crypto.randomUUID(),username=operatorUsername(accountId)
+        const {data:created,error:createError}=await admin.auth.admin.createUser({id:accountId,email:operatorAuthAddress(username),email_confirm:true,app_metadata:{operator_username:username},user_metadata:{full_name:roster.full_name}})
         if(createError)throw createError
         newId=created.user?.id
-        if(!newId)throw new Error('Unable to create phone account')
+        if(!newId)throw new Error('Unable to create operator account')
         // Retain identity immediately: retry resumes this exact Auth account.
         const {error:linkError}=await admin.from('personnel_onboarding').update({profile_id:newId,status:'pending_invitation'}).eq('id',rosterId)
         if(linkError)throw linkError
       }
       const {data:identity,error:identityError}=await admin.auth.admin.getUserById(newId)
-      if(identityError||identity.user?.phone?.replace(/^\+/,'')!==roster.phone.slice(1))throw new Error('Registered phone does not match the authentication account')
+      if(identityError||!identity.user)throw new Error('Operator authentication account was not found')
+      if(identity.user.email&&identity.user.email!==operatorAuthAddress(operatorUsername(newId)))throw new Error('Account already uses a different login. Review this profile before changing it.')
       if(roster.status==='active')return new Response(JSON.stringify({error:'This operator is already activated. Use the normal sign-in screen.'}),{status:409,headers:cors})
-      const {error:profileError}=await admin.from('profiles').upsert({id:newId,phone:roster.phone,full_name:roster.full_name,role:'operator',personnel_category:'operator',position_title:roster.position_title||'Concrete Plant Operator',corporate_manager_id:roster.reporting_manager_id,active:true},{onConflict:'id'})
+      const {error:profileError}=await admin.from('profiles').upsert({id:newId,email:null,phone:roster.phone,full_name:roster.full_name,role:'operator',personnel_category:'operator',position_title:roster.position_title||'Concrete Plant Operator',corporate_manager_id:roster.reporting_manager_id,active:true},{onConflict:'id'})
       if(profileError)throw profileError
       const {error:accessError}=await admin.from('user_unit_access').upsert({user_id:newId,business_unit_id:roster.business_unit_id,access_role:'operator',can_edit:false,can_approve:false},{onConflict:'user_id,business_unit_id'})
       if(accessError)throw accessError
       await admin.from('admin_security_events').insert({actor_user_id:user.id,target_user_id:newId,action:'phone_operator_provisioned'})
-      return new Response(JSON.stringify({ok:true,user_id:newId,message:'Phone account created. Prepare an activation link for the supervisor to forward.'}),{headers:cors})
+      return new Response(JSON.stringify({ok:true,user_id:newId,message:'Operator account created. Prepare an activation link for the supervisor to forward.'}),{headers:cors})
     }
 
     if(action==='create_user'){
