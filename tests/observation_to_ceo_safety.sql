@@ -9,6 +9,7 @@ select id into strict unitid from public.business_units where code='SAND-PR';
 select id into strict assetid from public.assets where business_unit_id=unitid and asset_code like 'MOC-%' order by asset_code limit 1;
 update public.profiles set corporate_manager_id=sup where id=emp;
 perform public.set_business_unit_approval_threshold(unitid,1000);
+insert into public.user_unit_access(user_id,business_unit_id,access_role,can_edit,can_approve) values(sup,unitid,'unit_supervisor',true,false) on conflict(user_id,business_unit_id) do update set can_edit=true;
 perform set_config('request.jwt.claims',jsonb_build_object('sub',emp,'role','authenticated')::text,true);
 result:=public.submit_field_observation(draft,unitid,assetid,'equipment','[QA rollback] Abnormal vibration recorded by operator','normal');
 obs:=(result->>'observation_id')::uuid;
@@ -22,7 +23,7 @@ exception when others then if sqlerrm not like '%Not authorized to convert%' the
 perform set_config('request.jwt.claims',jsonb_build_object('sub',sup,'role','authenticated')::text,true);
 wo:=public.create_work_order_from_observation(obs,emp,'medium',2000,'[QA rollback] Operator to CEO route');
 if public.create_work_order_from_observation(obs,emp,'medium',2000,null)<>wo then raise exception 'Conversion created duplicate WO'; end if;
-perform set_config('request.jwt.claims',jsonb_build_object('sub',emp,'role','authenticated')::text,true);
+perform set_config('request.jwt.claims',jsonb_build_object('sub',sup,'role','authenticated')::text,true);
 perform public.request_work_order_execution_approval(wo);
 if not exists(select 1 from public.work_orders where id=wo and manager_approver_id=mgr and execution_approval_status='pending_manager' and corporate_approval_required) then raise exception 'WO did not route to manager with corporate escalation'; end if;
 perform set_config('request.jwt.claims',jsonb_build_object('sub',guy,'role','authenticated')::text,true);

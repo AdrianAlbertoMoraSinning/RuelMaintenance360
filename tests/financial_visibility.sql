@@ -1,3 +1,4 @@
+begin;
 -- Run inside BEGIN/ROLLBACK; fixtures and temporary MOC grants never persist.
 set local request.jwt.claims = '{"sub":"2fb0bab9-a296-499c-80fe-fdb87f1127ce","role":"authenticated"}';
 do $qa$
@@ -28,6 +29,9 @@ begin
  perform set_config('ruel.qa.order',w::text,true); perform set_config('ruel.qa.part',p::text,true);
  perform set_config('ruel.qa.vendor',v::text,true); perform set_config('ruel.qa.location',loc::text,true);
  perform set_config('ruel.qa.po',po::text,true);
+ update public.work_orders set execution_approval_status='draft' where id=w;
+ perform set_config('ruel.qa.req',public.add_work_order_part_requirement(w,p,1,loc)::text,true);
+ update public.work_orders set execution_approval_status='approved',status='in_progress' where id=w;
 end $qa$;
 set local role authenticated;
 set local request.jwt.claims = '{"sub":"53bc4a33-6d79-4164-8937-b19c757d56ac","role":"authenticated"}';
@@ -69,7 +73,7 @@ begin
  update public.work_orders set diagnosis='[QA rollback] operational edit' where id=current_setting('ruel.qa.order')::uuid;
  tx:=public.post_inventory_movement(current_setting('ruel.qa.part')::uuid,current_setting('ruel.qa.location')::uuid,'receipt',10,99999);
  perform set_config('ruel.qa.receipt',tx::text,true);
- req:=public.add_work_order_part_requirement(current_setting('ruel.qa.order')::uuid,current_setting('ruel.qa.part')::uuid,1,current_setting('ruel.qa.location')::uuid);
+ req:=current_setting('ruel.qa.req')::uuid;
  tx:=public.issue_part_to_work_order(current_setting('ruel.qa.order')::uuid,current_setting('ruel.qa.part')::uuid,current_setting('ruel.qa.location')::uuid,1,99999,req);
  perform set_config('ruel.qa.issue',tx::text,true);
  perform public.return_part_from_work_order(current_setting('ruel.qa.order')::uuid,current_setting('ruel.qa.part')::uuid,current_setting('ruel.qa.location')::uuid,1,99999,req);
@@ -103,3 +107,5 @@ begin
  if not exists(select 1 from public.work_orders where maintenance_plan_id=current_setting('ruel.qa.plan')::uuid and estimated_cost=222) then raise exception 'PM generation lost the plan estimate'; end if;
 end $qa$;
 select 'financial visibility, scope, operational editing and server pricing passed' as qa_result;
+
+rollback;

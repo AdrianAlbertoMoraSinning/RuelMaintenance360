@@ -1,0 +1,15 @@
+import {useEffect,useState} from 'react'
+import {supabase} from '../lib/supabase'
+type Request={id:string;part_id:string;preferred_location_id:string|null;quantity_to_purchase:number}
+type Plan={request_id:string;preferred_vendor_id:string|null;quoted_unit_cost:number|null;supplier_confirmed:boolean}
+export default function PurchasePreparation({requests,vendors,parts,editable,onChanged}:{requests:Request[];vendors:{id:string;name:string}[];parts:{id:string;part_number:string}[];editable:boolean;onChanged:()=>void}){
+ const[plans,setPlans]=useState<Plan[]>([]),[message,setMessage]=useState(''),[saving,setSaving]=useState(false)
+ const ids=requests.map(r=>r.id).join(',')
+ useEffect(()=>{if(!ids){setPlans([]);return}supabase.from('work_order_purchase_plans').select('*').in('request_id',ids.split(',')).then(({data,error})=>{if(error)setMessage(error.message);else setPlans(data||[])})},[ids])
+ function plan(id:string){return plans.find(p=>p.request_id===id)||{request_id:id,preferred_vendor_id:null,quoted_unit_cost:null,supplier_confirmed:false}}
+ function change(id:string,patch:Partial<Plan>){setPlans(prev=>[...prev.filter(p=>p.request_id!==id),{...plan(id),...patch}])}
+ async function save(id:string){setSaving(true);const{error}=await supabase.from('work_order_purchase_plans').upsert({...plan(id),updated_at:new Date().toISOString()});setMessage(error?.message||'Supplier plan saved. Update the WO estimate to cover parts, labour and external services before requesting approval.');if(!error)onChanged();setSaving(false)}
+ const needs=requests.filter(r=>Number(r.quantity_to_purchase)>0)
+ if(!needs.length)return null
+ return <section className="profile-panel"><h3>Purchasing preparation</h3><p>Confirm supplier price and dispatch arrangements. WO approval prepares draft Purchase Orders; release each PO after confirming dispatch. Unknown prices stay pending.</p>{message&&<div role="status">{message}</div>}{needs.map(r=>{const p=plan(r.id);return <div className="resource-form" key={r.id}><strong>{parts.find(x=>x.id===r.part_id)?.part_number} · Buy {r.quantity_to_purchase}</strong><label>Supplier<select disabled={!editable} value={p.preferred_vendor_id||''} onChange={e=>change(r.id,{preferred_vendor_id:e.target.value||null})}><option value="">Pending supplier</option>{vendors.map(v=><option key={v.id} value={v.id}>{v.name}</option>)}</select></label><label>Quoted unit price CAD<input disabled={!editable} type="number" min="0" step="0.01" value={p.quoted_unit_cost??''} placeholder="Pending" onChange={e=>change(r.id,{quoted_unit_cost:e.target.value===''?null:Number(e.target.value)})}/></label><label><input disabled={!editable} type="checkbox" checked={p.supplier_confirmed} onChange={e=>change(r.id,{supplier_confirmed:e.target.checked})}/> Supplier terms / price confirmed</label>{!r.preferred_location_id&&<p className="error-box">Select a preferred storage position in the part requirement before authorization.</p>}{editable&&<button type="button" className="secondary-outline" disabled={saving} onClick={()=>save(r.id)}>Save purchasing plan</button>}</div>})}</section>
+}

@@ -1,3 +1,4 @@
+begin;
 -- Run inside BEGIN/ROLLBACK. All amounts below are disposable QA fixtures.
 set local request.jwt.claims='{"sub":"2fb0bab9-a296-499c-80fe-fdb87f1127ce","role":"authenticated"}';
 do $qa$
@@ -68,3 +69,5 @@ begin
 end $qa$;
 reset role;
 select 'PASS: independent unit thresholds, no global fallback, unset/zero/boundary behavior, snapshots, moved WO and confidential Super Admin-only settings' as result;
+
+rollback;

@@ -1,0 +1,29 @@
+# RUEL workflow commissioned 20 October 2026
+
+All eight Business Units have a CAD 500 threshold. Manager authorization is required on every WO; amounts strictly greater than CAD 500 (including 500.01) require the manager's approval followed by the designated CEO. Corporate-stage approval and return are restricted to an active CEO personnel profile, currently Guy Munden. Adrian retains his existing administrator role but cannot approve the CEO stage. Existing approval snapshots remain historical; new requests use the current unit limit.
+
+Don McDonald (don@ruelconcreteltd.com) was created as Mechanical Maintenance Supervisor, reports to Adrian, has edit access only to Peace River Concrete Plant, and has no manager approval authority. Supabase accepted his invitation. Julies Dawson (DJ) and Tyrel Jhonson were registered in `personnel_onboarding`, reporting to Don, without invitations or fabricated contact addresses. Their authenticated profiles cannot be activated until real email/phone login details are supplied.
+
+Operators land directly in a dedicated observations workspace, with no corporate navigation. Capture supports equipment selection scoped by RLS, large controls, dictation where SpeechRecognition is supported, keyboard dictation fallback, photos and a large red send button. Existing persisted/refreshing sessions remain enabled. Device/browser storage, administrative revocation and provider session policies can still end a session. Dictation permission and real iOS/Android microphone behavior need device acceptance testing.
+
+Observations route to the reporter's supervisor. A supervisor can request information; the operator responds and resubmits with comments and history retained. Don converts an observation to a controlled WO and prepares resources. WO return notifies the preparer; correction and a fresh approval request repeat the chain. Conversion uses the observation supervisor's manager for authorization routing. Operators cannot create or update WOs directly.
+
+Safety and unsafe-equipment flags open a Safety Case and route to supervisor plus designated OHS. Maintenance completion does not close a Safety Case. Existing investigation, actions, verification, regulatory disposition and immutable snapshots remain mandatory as configured. Alberta reporting is a responsible-person action: the app does not submit to OHS. Serious incidents require prompt reporting and scene preservation when applicable; PSI reporting follows investigation; applicable investigation reports must be retained for at least two years. Sources checked: https://www.alberta.ca/report-serious-injuries-incident and https://www.alberta.ca/report-potentially-serious-incidents .
+
+Purchase shortages require confirmed supplier, quoted price and destination before authorization. The WO estimate must cover planned parts and external quotes; `costs_pending` holds a WO until missing costs are completed. Vendor quotes can be recorded before approval, while invoice commitments remain gated. Final authorization automatically prepares draft POs. A responsible user confirms dispatch and releases each PO; the app does not email suppliers automatically. Released quantities appear On Order. Each partial receipt requires physical placement confirmation in an active location belonging to the unit, then posts stock and Kardex.
+
+Actual consumption is explicitly issued while the WO is in progress. Approval and receipt do not consume inventory. Server pricing uses the current stock value, rather than a stale standard price; returns reverse the outstanding issued value. Part requirements must be revised and reauthorized when scope changes after approval. Completion creates in-app notifications for reporter, preparer, assignee and manager/CEO/completion approvers. Email is optional and remains dependent on SMTP commissioning.
+
+## Verification
+
+`tests/client_workflow_oct20.sql` runs in BEGIN/ROLLBACK and checks the real Don→Adrian→Guy hierarchy with disposable MOC observations, a new part and storage position. Covers operator WO denial, observation return/resubmission, unknown quotes, pending costs, 500/500.01/501 boundaries, WO return notifications, denial of Adrian as CEO, automatic draft PO, On Order, partial receipts, physical placement, over-receipt rejection, execution-only issue, receipt-price consumption, return valuation and completion notifications. No test rows or stock remain. Sequence numbers may advance.
+
+Also passed: reporting hierarchy, independent unit threshold, supervisor financial scope, observation-to-CEO/OHS, financial visibility, auth tests and production build. Authenticated RLS verified Don sees one unit and his manager but not unrelated shareholder profiles. Security advisor has only the pre-existing leaked password protection warning.
+
+## Remaining pilot gates
+
+Real device dictation, login persistence and notifications must be accepted on operators' phones after their contacts are supplied. The commissioning/training records remain retained; their full production isolation/cleanup and the broader inventory/inspection/report pilot remain separate pending work. Do not label the whole pilot production-certified on the basis of these transactional tests.
+
+## Interrupted-session recovery
+
+Recovered the uncommitted client changes and verified the live database migration history, all eight CAD 500 settings, Don’s active supervisor/manager relationship and pending-contact operator records. Re-ran the transactional client workflow test successfully, all eight authentication tests, regression guard and production build. Checked the actual observation component in an isolated 390 px layout harness without authentication; the send button computes to static positioning and does not cover the description, concern or photo controls. Authenticated mobile device acceptance remains pending. Temporary layout harness files are excluded from publication.

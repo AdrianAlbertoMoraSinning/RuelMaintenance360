@@ -1,5 +1,5 @@
 export type OfflineObservationPhoto={id:string;name:string;type:string;blob:Blob;caption:string}
-export type OfflineObservationDraft={id:string;created_at:string;business_unit_id:string;asset_id:string|null;observation_type:string;description:string;immediate_concern:string;photos:OfflineObservationPhoto[];serverObservationId?:string}
+export type OfflineObservationDraft={id:string;userId?:string;created_at:string;business_unit_id:string;asset_id:string|null;observation_type:string;description:string;immediate_concern:string;photos:OfflineObservationPhoto[];serverObservationId?:string}
 
 const DB_NAME='ruel-maintenance-360-field';
 const DB_VERSION=1;
