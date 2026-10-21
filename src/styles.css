@@ -235,4 +235,4 @@ input:focus, select:focus, textarea:focus { border-color: var(--yellow-dark); bo
  .mobile-field-view .sidebar{z-index:60}.mobile-field-view .todo-create-form :is(input,select,textarea){font-size:16px;min-height:48px;max-width:100%}
 }
 
-.performance-back-button{min-height:44px;white-space:normal;text-align:left;margin:0 0 12px}.form-title .performance-back-button{font-size:12px;max-width:220px;margin:0 8px 0 0}
+.performance-back-button{min-height:48px;white-space:normal;text-align:left;margin:0 0 12px;padding:12px 18px;border:1px solid #14543d;border-radius:10px;background:linear-gradient(145deg,#23764f,#165a40);color:#fff;font-weight:800;box-shadow:inset 0 1px 0 #ffffff26,0 3px 0 #0e422f,0 5px 12px #165a4026;cursor:pointer;transition:background .15s,box-shadow .15s}.performance-back-button:hover{background:linear-gradient(145deg,#1b6543,#104b34);color:#fff;box-shadow:inset 0 1px 0 #ffffff26,0 3px 0 #0e422f,0 7px 16px #165a4038}.performance-back-button:focus-visible{outline:3px solid #e8b931;outline-offset:3px}.performance-back-button:disabled{opacity:.65;cursor:wait}.form-title .performance-back-button{font-size:12px;max-width:220px;margin:0 8px 0 0}
