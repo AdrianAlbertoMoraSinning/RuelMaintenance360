@@ -1,0 +1,4 @@
+import type {TaskMessage} from '../lib/taskConversation'
+type Props={messages:TaskMessage[];userId:string;assignerId:string}
+const timestamp=(value:string)=>new Intl.DateTimeFormat('en-CA',{timeZone:'America/Edmonton',year:'numeric',month:'short',day:'numeric',hour:'numeric',minute:'2-digit',second:'2-digit'}).format(new Date(value))
+export default function TaskMessageList({messages,userId,assignerId}:Props){return <div className="task-chat-messages" role="log" aria-label="Task messages" aria-live="polite" aria-relevant="additions">{messages.map(m=><article key={m.id} className={`task-chat-bubble ${m.actor_id===userId?'sent':'received'}`}><header><strong>{m.author_name||'Team member'}{m.actor_id===userId?' · You':''}</strong><span>{m.actor_id===assignerId?'Task assigner':'Task assignee'}</span></header><p>{m.body}</p><time dateTime={m.created_at}>{timestamp(m.created_at)} · Alberta</time></article>)}</div>}

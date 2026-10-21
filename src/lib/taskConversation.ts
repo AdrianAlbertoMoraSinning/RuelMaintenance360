@@ -1,0 +1,7 @@
+export type TaskMessage={id:number;task_id:string;actor_id:string;author_name:string|null;body:string;created_at:string;client_message_id:string|null}
+export type TaskMessageDraft={text:string;requestId:string|null}
+export function mergeTaskMessages(current:TaskMessage[],incoming:TaskMessage[]){const messages=new Map(current.map(m=>[m.id,m]));for(const m of incoming)messages.set(m.id,m);return [...messages.values()].sort((a,b)=>a.id-b.id)}
+export function prepareTaskMessage(text:string,previous:{body:string;id:string}|null,newId:()=>string){const body=text.trim();if(!body||body.length>10000)throw new Error('Write a message of 1 to 10000 characters');return previous?.body===body?previous:{body,id:newId()}}
+const draftKey=(userId:string,taskId:string)=>`ruel:task-message:${userId}:${taskId}`
+export function readTaskMessageDraft(storage:Pick<Storage,'getItem'>|null,userId:string,taskId:string):TaskMessageDraft{try{const d=JSON.parse(storage?.getItem(draftKey(userId,taskId))||'null');return typeof d?.text==='string'?{text:d.text.slice(0,10000),requestId:typeof d.requestId==='string'?d.requestId:null}:{text:'',requestId:null}}catch{return {text:'',requestId:null}}}
+export function saveTaskMessageDraft(storage:Pick<Storage,'setItem'|'removeItem'>|null,userId:string,taskId:string,draft:TaskMessageDraft){try{if(draft.text)storage?.setItem(draftKey(userId,taskId),JSON.stringify(draft));else storage?.removeItem(draftKey(userId,taskId))}catch{/* A blocked browser cache must not prevent sending. */}}

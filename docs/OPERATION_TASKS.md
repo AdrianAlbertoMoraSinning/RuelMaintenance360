@@ -19,3 +19,14 @@ Task notifications are in-app, with refresh every 30 seconds while the page is v
 Calendar & Backlog shows authorized pending tasks beside PM/WO entries and opens the task. Administration shows the committee and designated CEO. Active Shareholder membership follows personnel category and account activation changes.
 
 Validation: `npm run test:tasks`, `npm run test:operator`, `npm run test:auth`, `npm run test:ai`, and `npm run build`. Database integration tests `tests/operation_tasks.sql` and `tests/operation_task_sources.sql` execute within BEGIN/ROLLBACK against the real configured hierarchy; they preserve zero production fixtures. They cover delegation restrictions, RLS, deep event propagation, read cursors, stale-write rejection, required checklists/review, source idempotency, meter deadlines, PM-to-WO absorption, and the controlled approval boundary. Phone interaction still needs an authenticated on-device acceptance check.
+
+
+## Task conversation
+
+Each task includes a bilateral conversation between its assigner and assignee, available at every organizational level. Existing direct task comments appear in the same transcript. Messages show their author, assignment side and full timestamp in Alberta time; both people can continue clarifying completed/cancelled tasks without changing their archived state. Authorized owners of linked leadership tasks can read the evidence, but only the two direct participants can reply.
+
+The transcript refreshes every four seconds while its task screen is active and the browser tab is visible, and immediately on focus. Older messages load in pages without losing the newer conversation. Switching the operator back to Observations suspends chat polling/read acknowledgement. Reading chat has its own cursor and cannot clear unread progress/review events. Chat-only events do not invalidate an unsent progress/review draft; other events still reject stale state changes.
+
+Messages are immutable through authenticated application access: no edit/delete controls or write grants. A client UUID makes delivery retries idempotent, including notifications. Failed/uncertain delivery retains the text and retry key in a user-and-task-scoped session draft; the app confirms sending only after the server accepts it. These temporary drafts are not server evidence until sent. Chat requires a connection and never sends a queued message automatically. Message bodies are escaped as literal text.
+
+Validation adds `tests/taskConversation.test.mjs` to `npm run test:tasks` and `tests/operation_task_conversation.sql` for all four delegation levels, two-way authorship, cross-task privacy, immutable evidence permissions, duplicate retries, unread chat/progress separation, chat-safe optimistic concurrency and archived-task retention. All database fixtures roll back.

@@ -1,0 +1,60 @@
+import {useEffect,useRef,useState,type FormEvent} from 'react'
+import {supabase} from '../lib/supabase'
+import {mergeTaskMessages,prepareTaskMessage,readTaskMessageDraft,saveTaskMessageDraft,type TaskMessage} from '../lib/taskConversation'
+import type {OperationTask} from '../lib/taskModel'
+import TaskMessageList from './TaskMessageList'
+import './task-conversation.css'
+type Props={task:OperationTask;userId:string;active?:boolean;onPosted:()=>void}
+function cache(){try{return window.sessionStorage}catch{return null}}
+export default function TaskConversation({task,userId,active=true,onPosted}:Props){
+ const initial=useRef(readTaskMessageDraft(cache(),userId,task.id))
+ const[text,setText]=useState(initial.current.text),[messages,setMessages]=useState<TaskMessage[]>([]),[loading,setLoading]=useState(true),[sending,setSending]=useState(false),[olderBusy,setOlderBusy]=useState(false),[hasOlder,setHasOlder]=useState(false),[error,setError]=useState(''),[sendError,setSendError]=useState(''),[confirmation,setConfirmation]=useState('')
+ const request=useRef<{body:string;id:string}|null>(initial.current.requestId?{body:initial.current.text.trim(),id:initial.current.requestId}:null)
+ const box=useRef<HTMLDivElement>(null),latest=useRef(0),oldest=useRef(0),epoch=useRef(0),fetching=useRef(false),sendingNow=useRef(false),enabled=useRef(active),initialized=useRef(false)
+ const canSend=task.assigned_by===userId||task.assigned_to===userId
+ enabled.current=active
+ useEffect(()=>{saveTaskMessageDraft(cache(),userId,task.id,{text,requestId:request.current?.body===text.trim()?request.current.id:null})},[text,userId,task.id])
+ function bottom(){window.requestAnimationFrame(()=>{if(box.current)box.current.scrollTop=box.current.scrollHeight})}
+ async function refresh(){
+  if(!enabled.current||document.visibilityState!=='visible'||fetching.current)return
+  fetching.current=true;const token=epoch.current;const atBottom=!box.current||box.current.scrollHeight-box.current.scrollTop-box.current.clientHeight<90;const first=!initialized.current
+  try{
+   let query=supabase.from('operation_task_conversation').select('id,task_id,actor_id,author_name,body,created_at,client_message_id').eq('task_id',task.id)
+   query=first?query.order('id',{ascending:false}).limit(50):query.gt('id',latest.current).order('id').limit(200)
+   const{data,error:failure}=await query;if(failure)throw failure
+   if(token!==epoch.current)return
+   const batch=(data||[]) as TaskMessage[];if(first){batch.reverse();setHasOlder(batch.length===50);oldest.current=batch[0]?.id||0}
+   if(batch.length){latest.current=Math.max(latest.current,...batch.map(m=>m.id));setMessages(v=>mergeTaskMessages(v,batch));if(first||atBottom)bottom()}
+   initialized.current=true;setError('');setLoading(false)
+   // Chat reads never clear a progress/review update that the user has not loaded.
+   if(latest.current&&enabled.current&&document.visibilityState==='visible'){
+    const seen=await supabase.rpc('mark_operation_task_messages_seen',{p_task_id:task.id,p_through_message_id:latest.current});if(seen.error)throw seen.error
+   }
+  }catch(e){if(token===epoch.current){setError((e as {message?:string}).message||'Unable to refresh conversation. Check your connection.');setLoading(false)}}finally{if(token===epoch.current)fetching.current=false}
+ }
+ useEffect(()=>{
+  if(!active)return
+  void refresh();const timer=window.setInterval(()=>void refresh(),4000);const focus=()=>void refresh()
+  window.addEventListener('focus',focus);document.addEventListener('visibilitychange',focus)
+  return()=>{epoch.current++;fetching.current=false;window.clearInterval(timer);window.removeEventListener('focus',focus);document.removeEventListener('visibilitychange',focus)}
+ },[task.id,userId,active])
+ async function older(){
+  if(olderBusy||!oldest.current)return;setOlderBusy(true);const token=epoch.current;const height=box.current?.scrollHeight||0;const top=box.current?.scrollTop||0
+  try{const{data,error:failure}=await supabase.from('operation_task_conversation').select('id,task_id,actor_id,author_name,body,created_at,client_message_id').eq('task_id',task.id).lt('id',oldest.current).order('id',{ascending:false}).limit(50);if(failure)throw failure;if(token!==epoch.current)return;const batch=(data||[]) as TaskMessage[];batch.reverse();if(batch.length){oldest.current=batch[0].id;setMessages(v=>mergeTaskMessages(v,batch))}setHasOlder(batch.length===50);setError('');window.requestAnimationFrame(()=>{if(box.current)box.current.scrollTop=top+box.current.scrollHeight-height})}catch(e){if(token===epoch.current)setError((e as {message?:string}).message||'Unable to load earlier messages')}finally{setOlderBusy(false)}
+ }
+ async function send(e:FormEvent){
+  e.preventDefault();if(sendingNow.current||!canSend||!enabled.current)return
+  let pending:{body:string;id:string};try{pending=prepareTaskMessage(text,request.current,()=>crypto.randomUUID())}catch(e){setSendError((e as Error).message);return}
+  request.current=pending;sendingNow.current=true;setSending(true);setSendError('');setConfirmation('')
+  saveTaskMessageDraft(cache(),userId,task.id,{text,requestId:pending.id})
+  try{const{error:failure}=await supabase.rpc('send_operation_task_message',{p_task_id:task.id,p_body:pending.body,p_client_message_id:pending.id});if(failure)throw failure
+   request.current=null;setText('');saveTaskMessageDraft(cache(),userId,task.id,{text:'',requestId:null});setConfirmation('Message saved to this task.');bottom();await refresh();onPosted()
+  }catch(e){setSendError(((e as {message?:string}).message||'Connection error')+'. Delivery was not confirmed. Your text is kept; retry to send this message once.')}
+  finally{sendingNow.current=false;setSending(false)}
+ }
+ return <section className="task-chat" aria-label="Task conversation"><div className="task-chat-heading"><div><span className="eyebrow">Instructions · Questions · Replies</span><h3>Task conversation</h3></div><span className="task-chat-evidence">Saved with this task</span></div><p className="task-chat-participants"><strong>{task.assigner_name||'Task assigner'}</strong> ↔ <strong>{task.assignee_name||'Task assignee'}</strong></p><p className="field-help">Messages retain their author and time, including after completion. New messages refresh automatically while this screen is open.</p>
+  {error&&<div className="warning-box" role="status">{error} <button type="button" className="secondary-outline" onClick={()=>void refresh()}>Refresh messages</button></div>}
+  <div ref={box} className="task-chat-scroll" tabIndex={0} aria-label="Conversation history">{hasOlder&&<button type="button" className="task-chat-older" disabled={olderBusy} onClick={()=>void older()}>{olderBusy?'Loading…':'Load earlier messages'}</button>}{loading?<p className="task-chat-empty">Loading conversation…</p>:messages.length?<TaskMessageList messages={messages} userId={userId} assignerId={task.assigned_by}/>:<p className="task-chat-empty">No messages yet. Ask a question or add instructions for this task.</p>}</div>
+  {canSend?<form className="task-chat-composer" onSubmit={send}><label htmlFor={`task-chat-${task.id}`}>Message to {task.assigned_by===userId?(task.assignee_name||'the assignee'):(task.assigner_name||'the assigner')}</label><textarea id={`task-chat-${task.id}`} rows={3} maxLength={10000} disabled={sending} value={text} onChange={e=>{setText(e.target.value);setConfirmation('')}} placeholder="Ask for details, give instructions or reply…"/><div className="task-chat-send-row"><small>{text.length.toLocaleString()} / 10,000</small><button type="submit" className="todo-primary" disabled={sending||!text.trim()||!active}>{sending?'Sending…':sendError?'Retry message':'Send message'}</button></div>{sendError&&<p className="task-chat-error" role="alert">{sendError}</p>}{confirmation&&<p className="task-chat-confirmation" role="status">{confirmation}</p>}<small className="field-help">Sent messages remain as evidence. Sending a message does not change task progress or approve work.</small></form>:<p className="field-help">You can read this linked task’s evidence. Only its assigner and assignee can reply.</p>}
+ </section>
+}
