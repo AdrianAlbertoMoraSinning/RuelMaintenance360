@@ -8,6 +8,7 @@
     "regression-check": "node scripts/regression-check.mjs",
     "build": "npm run regression-check && tsc -b && vite build",
     "preview": "vite preview",
+    "test:materials": "node --experimental-strip-types --test tests/partMaterialsAndPhotos.test.mjs",
     "test:ai": "node --experimental-strip-types --test tests/trustedAiSources.test.mjs",
     "test:auth": "node --experimental-strip-types --test tests/authFlow.test.mjs tests/phoneOnboarding.test.mjs tests/operatorIdentity.test.mjs tests/operatorRedemption.test.mjs tests/invitationRecipients.test.mjs"
   },

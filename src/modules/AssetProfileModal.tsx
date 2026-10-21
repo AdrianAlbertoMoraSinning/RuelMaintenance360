@@ -1,3 +1,4 @@
+import AssetComponents from './AssetComponents'
 import { FormEvent, useEffect, useMemo, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import PersonAvatar from '../components/PersonAvatar'
@@ -87,7 +88,7 @@ export default function AssetProfileModal({asset,role,onClose}:Props){
 
         <div className="profile-panel"><div className="section-heading small-heading"><div><span className="eyebrow">Controlled records</span><h3>Documents</h3></div><span className="count-chip">{documents.length}</span></div>{documents.length===0?<div className="empty-table compact">No asset-specific documents uploaded yet.</div>:<div className="profile-list">{documents.map(d=><button className="profile-list-row" key={d.id} onClick={()=>openDocument(d)}><span><strong>{d.title}</strong><small>{d.document_type} · {d.version||'no revision'} · {d.manufacturer||'manufacturer n/a'}</small></span><b>Open →</b></button>)}</div>}</div>
 
-        <div className="profile-panel history-panel"><div className="section-heading small-heading"><div><span className="eyebrow">Lifecycle record</span><h3>History</h3></div><span className="count-chip">{history.length} events</span></div>{history.length===0?<div className="empty-table compact">No maintenance history recorded yet.</div>:<div className="timeline">{history.map((h,i)=><div className="timeline-item" key={`${h.event_type}-${h.source_id}-${i}`}><span className={`timeline-type ${h.event_type}`}>{h.event_type.replaceAll('_',' ')}</span><div><strong>{h.title}</strong><small>{new Date(h.event_at).toLocaleString()}</small>{h.detail&&<p>{h.detail}</p>}</div></div>)}</div>}</div>
+        <AssetComponents assetId={asset.id} role={role}/><div className="profile-panel history-panel"><div className="section-heading small-heading"><div><span className="eyebrow">Lifecycle record</span><h3>History</h3></div><span className="count-chip">{history.length} events</span></div>{history.length===0?<div className="empty-table compact">No maintenance history recorded yet.</div>:<div className="timeline">{history.map((h,i)=><div className="timeline-item" key={`${h.event_type}-${h.source_id}-${i}`}><span className={`timeline-type ${h.event_type}`}>{h.event_type.replaceAll('_',' ')}</span><div><strong>{h.title}</strong><small>{new Date(h.event_at).toLocaleString()}</small>{h.detail&&<p>{h.detail}</p>}</div></div>)}</div>}</div>
       </div>}
     </section>
   </div>

@@ -1,0 +1,45 @@
+begin;
+do $$
+declare manager uuid; supervisor uuid; u uuid; a uuid; b uuid; p1 uuid:=gen_random_uuid(); p2 uuid:=gen_random_uuid(); plan uuid; loc uuid; wo uuid; generated record;
+begin
+ select id into strict manager from public.profiles where email='concrete@ruelconcreteltd.com';
+ select id into strict supervisor from public.profiles where email='don@ruelconcreteltd.com';
+ select id into strict u from public.business_units where code='CONC-PR';
+ select id into strict loc from public.inventory_locations where business_unit_id=u limit 1;
+ perform set_config('request.jwt.claim.sub',manager::text,true);
+ a:=public.create_asset_with_primary_responsible(p_business_unit_id=>u,p_responsible_user_id=>supervisor,p_asset_code=>'TRANSIENT-BOM-'||left(p1::text,8),p_name=>'Transient component verification',p_asset_category=>'BATCH_PLANT');
+ b:=public.create_asset_with_primary_responsible(p_business_unit_id=>u,p_responsible_user_id=>supervisor,p_asset_code=>'TRANSIENT-SECOND-'||left(p1::text,8),p_name=>'Transient second machine',p_asset_category=>'BATCH_PLANT');
+ insert into public.parts(id,part_number,description,unit_of_measure,standard_cost,responsible_user_id) values(p1,'TRANSIENT-P1-'||left(p1::text,8),'Transient reference one','ea',15,supervisor),(p2,'TRANSIENT-P2-'||left(p2::text,8),'Transient reference two','ea',20,supervisor);
+ insert into public.asset_part_compatibility(asset_id,part_id,relationship_type,installed_quantity,component_system) values(a,p1,'installed',2,'Hydraulics'),(a,p2,'compatible',0,'Engine'),(b,p1,'installed',1,'Hydraulics');
+ if (select count(*) from public.asset_part_compatibility where part_id=p1)<>2 then raise exception 'Shared part cannot serve multiple assets';end if;
+ if exists(select 1 from public.inventory_transactions where part_id in (p1,p2)) then raise exception 'Linking parts moved stock';end if;
+ begin insert into public.asset_part_compatibility(asset_id,part_id,relationship_type,installed_quantity) values(b,p2,'installed',0);raise exception 'Zero installed quantity accepted';exception when check_violation then null;end;
+ insert into public.inventory_transactions(part_id,location_id,transaction_type,quantity,unit_cost,reference,recorded_by) values(p1,loc,'receipt',2,15,'TRANSIENT-ROLLBACK',manager);
+ if not exists(select 1 from public.asset_part_availability where asset_id=a and part_id=p1 and installed_quantity=2 and quantity_available=2) then raise exception 'Machine quantity and spare stock are not independent';end if;
+ insert into public.maintenance_plans(asset_id,plan_type,title,trigger_basis,interval_days,next_due_date,active,auto_generate,lead_days) values(a,'preventive','Transient materials plan','calendar',30,current_date,true,true,0) returning id into plan;
+ if public.add_asset_parts_to_plan(plan,jsonb_build_array(jsonb_build_object('part_id',p1,'quantity',3,'location_id',loc)))<>1 then raise exception 'Selection not copied';end if;
+ if exists(select 1 from public.maintenance_plan_parts where maintenance_plan_id=plan and part_id=p2) then raise exception 'Unselected component was copied';end if;
+ begin perform public.add_asset_parts_to_plan(plan,jsonb_build_array(jsonb_build_object('part_id',p1,'quantity',1)));raise exception 'Duplicate accepted';exception when others then if sqlerrm='Duplicate accepted' then raise;end if;end;
+ for generated in select * from public.generate_due_maintenance_work_orders(u,now()) loop if generated.maintenance_plan_id=plan then wo:=generated.work_order_id;end if;end loop;
+ if wo is null then raise exception 'Plan did not generate WO';end if;
+ if not exists(select 1 from public.work_order_part_requests where work_order_id=wo and part_id=p1 and quantity_requested=3 and quantity_to_purchase=1) then raise exception 'WO quantity or shortage wrong';end if;
+ if exists(select 1 from public.work_order_part_requests where work_order_id=wo and part_id=p2) then raise exception 'WO included unselected spare';end if;
+ if (select quantity_on_hand from public.inventory_on_hand where location_id=loc and part_id=p1)<>2 then raise exception 'Planning consumed physical stock';end if;
+ if (select installed_quantity from public.asset_part_compatibility where asset_id=a and part_id=p1)<>2 then raise exception 'Service quantity overwrote machine quantity';end if;
+ perform set_config('ruel.test.asset',b::text,true);perform set_config('ruel.test.part',p2::text,true);
+ if has_table_privilege('anon','public.part_photos','SELECT') or has_table_privilege('authenticated','public.part_photos','UPDATE') or has_function_privilege('anon','public.add_asset_parts_to_plan(uuid,jsonb)','EXECUTE') then raise exception 'Photo/plan grants unsafe';end if;
+ if exists(select 1 from information_schema.columns where table_schema='public' and table_name='asset_part_availability' and column_name ilike '%cost%') then raise exception 'Availability view exposes costs';end if;
+end $$;
+select set_config('request.jwt.claim.sub',(select profile_id::text from public.personnel_onboarding where preferred_name='DJ'),true);
+set local role authenticated;
+do $$ begin
+ begin insert into public.asset_part_compatibility(asset_id,part_id,relationship_type,installed_quantity) values(current_setting('ruel.test.asset')::uuid,current_setting('ruel.test.part')::uuid,'compatible',0);raise exception 'Operator edited machine components';exception when insufficient_privilege then null;end;
+ begin insert into public.part_photos(part_id,storage_path,uploaded_by) values(current_setting('ruel.test.part')::uuid,current_setting('ruel.test.part')||'/'||gen_random_uuid()::text||'.jpg',auth.uid());raise exception 'Operator uploaded reference photo metadata';exception when insufficient_privilege then null;end;
+end $$;
+reset role;
+select set_config('request.jwt.claim.sub',(select id::text from public.profiles where email='concrete@ruelconcreteltd.com'),true);
+set local role authenticated;
+insert into public.part_photos(part_id,storage_path,caption,uploaded_by) values(current_setting('ruel.test.part')::uuid,current_setting('ruel.test.part')||'/'||gen_random_uuid()::text||'.jpg','Transient rollback photo metadata',auth.uid());
+reset role;
+rollback;
+select 'PASS: multi-machine catalogue reuse; installed vs stock quantities; no movements on linking; positive installed quantity; selected maintenance subset; duplicate protection; WO inheritance; exact stock shortage; no consumption at planning; protected grants and no new cost exposure. All fixtures rolled back.' as result;
