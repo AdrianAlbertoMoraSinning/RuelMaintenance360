@@ -134,6 +134,15 @@ Deno.serve(async (req)=>{
       return new Response(JSON.stringify({ok:true}),{headers:cors})
     }
 
+    if(action==='update_personal_details'){
+      const {error}=await admin.rpc('admin_update_personnel_details',{
+        p_actor_id:user.id,p_user_id:targetUserId,p_full_name:String(body.full_name||''),
+        p_phone:body.phone?String(body.phone):null,p_position_title:body.position_title?String(body.position_title):null
+      })
+      if(error)throw error
+      return new Response(JSON.stringify({ok:true}),{headers:cors})
+    }
+
     if(action==='update_profile'){
       const patch:any={}
       if('full_name' in body) patch.full_name=String(body.full_name||'').trim()||null
