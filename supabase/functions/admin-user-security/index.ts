@@ -1,3 +1,4 @@
+import {supervisorInvitationRecipients} from '../_shared/invitationRecipients.ts'
 import {supervisorInvitationHtml} from '../_shared/supervisorInvitation.ts'
 import {operatorUsername,operatorAuthAddress} from '../_shared/operatorIdentity.ts'
 import { createClient } from 'npm:@supabase/supabase-js@2.58.0'
@@ -34,8 +35,11 @@ Deno.serve(async (req)=>{
       if(sendEmail&&(!emailKey||!emailFrom))return new Response(JSON.stringify({error:'System email delivery is not configured. Prepare the supervisor link and send the supervisor email from your mailbox.'}),{status:503,headers:cors})
       const {data:roster,error:rosterError}=await admin.from('personnel_onboarding').select('profile_id,full_name,phone,reporting_manager_id').eq('id',String(body.onboarding_id||'')).single()
       if(rosterError||!roster?.profile_id)throw new Error('Create the operator account first')
-      const{data:manager}=await admin.from('profiles').select('email,full_name').eq('id',roster.reporting_manager_id).single()
-      if(!manager?.email)throw new Error('Supervisor email is required')
+      const{data:supervisor,error:supervisorError}=await admin.from('profiles').select('id,email,full_name,active,corporate_manager_id').eq('id',roster.reporting_manager_id).single()
+      if(supervisorError||!supervisor)throw new Error('Assigned supervisor was not found')
+      const{data:manager,error:managerError}=supervisor.corporate_manager_id?await admin.from('profiles').select('id,email,full_name,active').eq('id',supervisor.corporate_manager_id).single():{data:null,error:null}
+      if(managerError)throw new Error('Unable to resolve the supervisor’s manager')
+      const recipients=supervisorInvitationRecipients(supervisor,manager)
       const token=Array.from(crypto.getRandomValues(new Uint8Array(32)),x=>x.toString(16).padStart(2,'0')).join('')
       const hash=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(token))),x=>x.toString(16).padStart(2,'0')).join('')
       const{data:expires,error}=await admin.rpc('issue_forwarded_operator_invitation',{p_profile_id:roster.profile_id,p_token_hash:hash,p_actor_id:user.id})
@@ -43,11 +47,11 @@ Deno.serve(async (req)=>{
       await admin.from('admin_security_events').insert({actor_user_id:user.id,target_user_id:roster.profile_id,action:'supervisor_forwarded_invitation_prepared'})
       const activationUrl='https://ruelmaintenance360.netlify.app/?setup=forwarded#invite='+token
       if(sendEmail){
-        const html=supervisorInvitationHtml({supervisor:manager.full_name,operator:roster.full_name,phone:roster.phone,username:operatorUsername(roster.profile_id),url:activationUrl,expires:new Date(expires).toLocaleString('en-CA',{timeZone:'America/Edmonton'})+' (Alberta)'})
-        const delivery=await fetch('https://api.resend.com/emails',{method:'POST',headers:{Authorization:'Bearer '+emailKey,'Content-Type':'application/json'},body:JSON.stringify({from:emailFrom,to:[manager.email],subject:'RUEL: forward '+roster.full_name+'’s activation link',html})})
+        const html=supervisorInvitationHtml({supervisor:supervisor.full_name,operator:roster.full_name,phone:roster.phone,username:operatorUsername(roster.profile_id),url:activationUrl,expires:new Date(expires).toLocaleString('en-CA',{timeZone:'America/Edmonton'})+' (Alberta)'})
+        const delivery=await fetch('https://api.resend.com/emails',{method:'POST',headers:{Authorization:'Bearer '+emailKey,'Content-Type':'application/json'},body:JSON.stringify({from:emailFrom,...recipients,subject:'RUEL: forward '+roster.full_name+'’s activation link',html})})
         if(!delivery.ok)throw new Error('Supervisor email was not accepted by the email service. Prepare a replacement link before retrying.')
       }
-      return new Response(JSON.stringify({ok:true,email_sent:sendEmail,activation_url:'https://ruelmaintenance360.netlify.app/?setup=forwarded#invite='+token,expires_at:expires,supervisor_email:manager.email,supervisor_name:manager.full_name,operator_name:roster.full_name,operator_phone:roster.phone,operator_username:operatorUsername(roster.profile_id),message:'Personal activation link prepared. Forward only to this operator; opening the link does not activate the account.'}),{headers:{...cors,'Cache-Control':'no-store'}})
+      return new Response(JSON.stringify({ok:true,email_sent:sendEmail,activation_url:'https://ruelmaintenance360.netlify.app/?setup=forwarded#invite='+token,expires_at:expires,supervisor_email:supervisor.email,supervisor_name:supervisor.full_name,manager_email:manager?.email,manager_name:manager?.full_name,operator_name:roster.full_name,operator_phone:roster.phone,operator_username:operatorUsername(roster.profile_id),message:'Personal activation link prepared. Forward only to this operator; opening the link does not activate the account.'}),{headers:{...cors,'Cache-Control':'no-store'}})
     }
 
     if(action==='activate_operator_onboarding'){
