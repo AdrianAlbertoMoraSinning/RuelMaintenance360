@@ -1,0 +1,414 @@
+{
+  "business_unit": "Peace River Concrete Plant",
+  "business_unit_code": "CONC-PR",
+  "code_rule": "PRC-SYSTEM-EQUIPMENT-###; plant and maintainable systems are parent assets; consumable internals belong in Parts & Inventory.",
+  "responsible": "Don McDonald",
+  "source_date": "2026-10-21",
+  "assets": [
+    {
+      "code": "PRC-PLT-001",
+      "name": "Peace River Concrete Batch Plant",
+      "category": "BATCH_PLANT",
+      "photo": 1,
+      "parent": null,
+      "photo_kind": "schematic",
+      "notes": "Overall plant registry. Reference is a control-screen process diagram, not a physical photograph of every component. The two cement silo icons require field mapping to the horizontal bulk store before creating further storage assets. Initial C3 criticality requires maintenance validation."
+    },
+    {
+      "code": "PRC-CTL-001",
+      "name": "Batching Control Operator Station",
+      "category": "CONTROL_SYSTEM",
+      "photo": 1,
+      "parent": "PRC-PLT-001",
+      "photo_kind": "equipment",
+      "notes": "Photographed operator monitor and batching application. Screen identifies P1910, RUEL Concrete, Peace River. Controller, PLC and software version not verified."
+    },
+    {
+      "code": "PRC-CEM-STO-001",
+      "name": "Horizontal Bulk Cement Storage Vessel",
+      "category": "STORAGE_TANK",
+      "photo": 4,
+      "parent": "PRC-PLT-001",
+      "photo_kind": "equipment",
+      "notes": "Identified by Adrian as the large cement storage pipa. Horizontal blue vessel with several discharge sections, fill couplings, valves, air lines and supports. Do not equate its sections to the two HMI silo icons without verification. Capacity, pressure rating and serial pending."
+    },
+    {
+      "code": "PRC-CEM-BLR-001",
+      "name": "Cement Transfer Blower 1",
+      "category": "BLOWER",
+      "photo": 2,
+      "parent": "PRC-CEM-STO-001",
+      "photo_kind": "equipment",
+      "notes": "Identity and number supplied by Adrian. Photo 2: blower package with air intake/silencer, drive guard, hoses and connections. Drive specifications, manufacturer and serial pending; removable internals will be inventory parts, not duplicate assets."
+    },
+    {
+      "code": "PRC-CEM-BLR-002",
+      "name": "Cement Transfer Blower 2",
+      "category": "BLOWER",
+      "photo": 3,
+      "parent": "PRC-CEM-STO-001",
+      "photo_kind": "equipment",
+      "notes": "Identity and number supplied by Adrian. Photo 3: blower package with air intake/silencer, drive guard, hoses and connections. Drive specifications, manufacturer and serial pending; removable internals will be inventory parts, not duplicate assets."
+    },
+    {
+      "code": "PRC-WAT-TNK-001",
+      "name": "Outdoor Hot Water Storage Tank",
+      "category": "STORAGE_TANK",
+      "photo": 5,
+      "parent": "PRC-PLT-001",
+      "photo_kind": "equipment",
+      "notes": "Vertical outdoor tank identified by Adrian. Visible lower connections and level scale. Capacity, construction and operating pressure not inferred from appearance."
+    },
+    {
+      "code": "PRC-AGG-HTG-001",
+      "name": "Aggregate Storage Heating Distribution",
+      "category": "PROCESS_HEATER",
+      "photo": 6,
+      "parent": "PRC-PLT-001",
+      "photo_kind": "equipment",
+      "notes": "External header with individual isolation valves and flexible distribution branches beside aggregate storage. Heating medium, heat source, branch count and zone tags require verification; the image does not prove steam service."
+    },
+    {
+      "code": "PRC-WAT-HTR-001",
+      "name": "Water Heating System",
+      "category": "PROCESS_HEATER",
+      "photo": 7,
+      "parent": "PRC-PLT-001",
+      "photo_kind": "equipment",
+      "notes": "Identified by Adrian as water heating. Skid includes cylindrical heater/burner assembly, blower/drive, control cabinet and piping. Fuel, model, capacity and pressure ratings pending."
+    },
+    {
+      "code": "PRC-WAT-BLR-001",
+      "name": "Water Heater Air Blower Package",
+      "category": "BLOWER",
+      "photo": 7,
+      "parent": "PRC-WAT-HTR-001",
+      "photo_kind": "shared_equipment",
+      "notes": "Visible blue blower/silencer and motor assembly at rear of the heater skid. Shared skid photograph; exact air-service role and nameplate need verification."
+    },
+    {
+      "code": "PRC-WAT-CTL-001",
+      "name": "Water Heater Control Cabinet",
+      "category": "CONTROL_SYSTEM",
+      "photo": 7,
+      "parent": "PRC-WAT-HTR-001",
+      "photo_kind": "shared_equipment",
+      "notes": "White control cabinet visible on the left of the heater skid, with emergency stop, switches and instruments. Shared equipment photograph; electrical drawings and component tags pending."
+    },
+    {
+      "code": "PRC-WAT-TNK-002",
+      "name": "Indoor Batch Water Storage Tank",
+      "category": "STORAGE_TANK",
+      "photo": 8,
+      "parent": "PRC-PLT-001",
+      "photo_kind": "equipment",
+      "notes": "Internal vertical tank identified by Adrian as hot/cold water storage. Access ladder, level indication, upper piping and hose visible. Do not assign a capacity without a nameplate or dimensions."
+    },
+    {
+      "code": "PRC-WAT-PMP-001",
+      "name": "Indoor Water Transfer Pump Assembly",
+      "category": "DOSING_SYSTEM",
+      "photo": 8,
+      "parent": "PRC-WAT-TNK-002",
+      "photo_kind": "shared_equipment",
+      "notes": "Pump/transfer assembly and green hoses visible at floor level beside the indoor tank. Equipment identity is visible; suction/discharge routing and duty need confirmation."
+    },
+    {
+      "code": "PRC-ADM-DOS-000",
+      "name": "Admixture Dosing Station Bank",
+      "category": "DOSING_SYSTEM",
+      "photo": 9,
+      "parent": "PRC-PLT-001",
+      "photo_kind": "equipment",
+      "notes": "Physical bank of graduated dosing vessels, valves, regulators/gauges, hoses and lower enclosures. Station product assignments below use HMI channel labels and require physical tag verification. The unused eighth HMI slot is not an installed asset."
+    },
+    {
+      "code": "PRC-ADM-DOS-001",
+      "name": "Admixture Doser 01 — Air Entrainer — HMI AER CA",
+      "category": "DOSING_SYSTEM",
+      "photo": 9,
+      "parent": "PRC-ADM-DOS-000",
+      "photo_kind": "shared_equipment",
+      "notes": "Individual maintainable dosing channel 1, configured as \"Air Entrainer — HMI AER CA\" on the control screen. Shared photograph of the complete dosing bank; exact vessel-to-channel mapping and currently connected product require on-site verification. Channel labels do not certify product availability or current use."
+    },
+    {
+      "code": "PRC-ADM-DOS-002",
+      "name": "Admixture Doser 02 — HMI Plastiment",
+      "category": "DOSING_SYSTEM",
+      "photo": 9,
+      "parent": "PRC-ADM-DOS-000",
+      "photo_kind": "shared_equipment",
+      "notes": "Individual maintainable dosing channel 2, configured as \"HMI Plastiment\" on the control screen. Shared photograph of the complete dosing bank; exact vessel-to-channel mapping and currently connected product require on-site verification. Channel labels do not certify product availability or current use."
+    },
+    {
+      "code": "PRC-ADM-DOS-003",
+      "name": "Admixture Doser 03 — HMI Plastocrete 250",
+      "category": "DOSING_SYSTEM",
+      "photo": 9,
+      "parent": "PRC-ADM-DOS-000",
+      "photo_kind": "shared_equipment",
+      "notes": "Individual maintainable dosing channel 3, configured as \"HMI Plastocrete 250\" on the control screen. Shared photograph of the complete dosing bank; exact vessel-to-channel mapping and currently connected product require on-site verification. Channel labels do not certify product availability or current use."
+    },
+    {
+      "code": "PRC-ADM-DOS-004",
+      "name": "Admixture Doser 04 — HMI Viscocrete 2100",
+      "category": "DOSING_SYSTEM",
+      "photo": 9,
+      "parent": "PRC-ADM-DOS-000",
+      "photo_kind": "shared_equipment",
+      "notes": "Individual maintainable dosing channel 4, configured as \"HMI Viscocrete 2100\" on the control screen. Shared photograph of the complete dosing bank; exact vessel-to-channel mapping and currently connected product require on-site verification. Channel labels do not certify product availability or current use."
+    },
+    {
+      "code": "PRC-ADM-DOS-005",
+      "name": "Admixture Doser 05 — HMI Sikament 300 CA",
+      "category": "DOSING_SYSTEM",
+      "photo": 9,
+      "parent": "PRC-ADM-DOS-000",
+      "photo_kind": "shared_equipment",
+      "notes": "Individual maintainable dosing channel 5, configured as \"HMI Sikament 300 CA\" on the control screen. Shared photograph of the complete dosing bank; exact vessel-to-channel mapping and currently connected product require on-site verification. Channel labels do not certify product availability or current use."
+    },
+    {
+      "code": "PRC-ADM-DOS-006",
+      "name": "Admixture Doser 06 — HMI Plastocrete 250 Not Used",
+      "category": "DOSING_SYSTEM",
+      "photo": 9,
+      "parent": "PRC-ADM-DOS-000",
+      "photo_kind": "shared_equipment",
+      "notes": "Individual maintainable dosing channel 6, configured as \"HMI Plastocrete 250 Not Used\" on the control screen. Shared photograph of the complete dosing bank; exact vessel-to-channel mapping and currently connected product require on-site verification. Channel labels do not certify product availability or current use."
+    },
+    {
+      "code": "PRC-ADM-DOS-007",
+      "name": "Admixture Doser 07 — HMI Sikaset NC",
+      "category": "DOSING_SYSTEM",
+      "photo": 9,
+      "parent": "PRC-ADM-DOS-000",
+      "photo_kind": "shared_equipment",
+      "notes": "Individual maintainable dosing channel 7, configured as \"HMI Sikaset NC\" on the control screen. Shared photograph of the complete dosing bank; exact vessel-to-channel mapping and currently connected product require on-site verification. Channel labels do not certify product availability or current use."
+    },
+    {
+      "code": "PRC-RMS-SND-001",
+      "name": "Raw Sand Storage Bay 1",
+      "category": "AGGREGATE_BIN",
+      "photo": null,
+      "parent": "PRC-PLT-001",
+      "photo_kind": "equipment",
+      "notes": "Separate upstream raw-material storage location explicitly requested by Adrian. No photograph supplied. Exact material grade, dimensions and bay identification pending. Distinct from the three batch feeder bins."
+    },
+    {
+      "code": "PRC-RMS-SND-002",
+      "name": "Raw Sand Storage Bay 2",
+      "category": "AGGREGATE_BIN",
+      "photo": null,
+      "parent": "PRC-PLT-001",
+      "photo_kind": "equipment",
+      "notes": "Separate upstream raw-material storage location explicitly requested by Adrian. No photograph supplied. Exact material grade, dimensions and bay identification pending. Distinct from the three batch feeder bins."
+    },
+    {
+      "code": "PRC-RMS-AGG-001",
+      "name": "Raw Crushed Aggregate Storage Bay 1",
+      "category": "AGGREGATE_BIN",
+      "photo": null,
+      "parent": "PRC-PLT-001",
+      "photo_kind": "equipment",
+      "notes": "Separate upstream raw-material storage location explicitly requested by Adrian. No photograph supplied. Exact material grade, dimensions and bay identification pending. Distinct from the three batch feeder bins."
+    },
+    {
+      "code": "PRC-RMS-AGG-002",
+      "name": "Raw Crushed Aggregate Storage Bay 2",
+      "category": "AGGREGATE_BIN",
+      "photo": null,
+      "parent": "PRC-PLT-001",
+      "photo_kind": "equipment",
+      "notes": "Separate upstream raw-material storage location explicitly requested by Adrian. No photograph supplied. Exact material grade, dimensions and bay identification pending. Distinct from the three batch feeder bins."
+    },
+    {
+      "code": "PRC-AGG-BIN-001",
+      "name": "Aggregate Feeder Bin 1 — 14–5 mm",
+      "category": "AGGREGATE_BIN",
+      "photo": 1,
+      "parent": "PRC-PLT-001",
+      "photo_kind": "schematic",
+      "notes": "HMI label 14–5 mm; Adrian described the small-aggregate feed as 14 mm. Identified on the process screen; physical photo pending."
+    },
+    {
+      "code": "PRC-AGG-BIN-002",
+      "name": "Aggregate Feeder Bin 2 — Sand",
+      "category": "AGGREGATE_BIN",
+      "photo": 1,
+      "parent": "PRC-PLT-001",
+      "photo_kind": "schematic",
+      "notes": "HMI label SAND; two visible discharge indications A and B belong to this bin, not two separate sand bins. Identified on the process screen; physical photo pending."
+    },
+    {
+      "code": "PRC-AGG-BIN-003",
+      "name": "Aggregate Feeder Bin 3 — 28–14 mm",
+      "category": "AGGREGATE_BIN",
+      "photo": 1,
+      "parent": "PRC-PLT-001",
+      "photo_kind": "schematic",
+      "notes": "HMI label 28–14 mm; Adrian described this feed as 25 mm. Retain this discrepancy for field verification, rather than silently changing the material grade. Identified on the process screen; physical photo pending."
+    },
+    {
+      "code": "PRC-AGG-CNV-001",
+      "name": "Aggregate Weigh Conveyor G-01",
+      "category": "CONVEYOR",
+      "photo": 1,
+      "parent": "PRC-PLT-001",
+      "photo_kind": "schematic",
+      "notes": "G-01 illustrated beneath the three aggregate bins. Process-diagram reference only; physical belt, drive and mechanical identification pending."
+    },
+    {
+      "code": "PRC-AGG-CNV-002",
+      "name": "Aggregate Transfer Conveyor G-02",
+      "category": "CONVEYOR",
+      "photo": 1,
+      "parent": "PRC-PLT-001",
+      "photo_kind": "schematic",
+      "notes": "G-02 illustrated downstream of the weigh conveyor. Process-diagram reference only; physical photograph and conveyor tag pending."
+    },
+    {
+      "code": "PRC-AGG-WGH-001",
+      "name": "Aggregate Weighing System",
+      "category": "WEIGHING_SYSTEM",
+      "photo": 1,
+      "parent": "PRC-AGG-CNV-001",
+      "photo_kind": "schematic",
+      "notes": "HMI aggregate scale and weigh-conveyor measurement function. Instrument/load-cell subsystem of G-01, not an additional material conveyor. Sensor specifications and calibration records pending."
+    },
+    {
+      "code": "PRC-CEM-WGH-001",
+      "name": "Cement Weigh Hopper and Scale",
+      "category": "WEIGHING_SYSTEM",
+      "photo": 1,
+      "parent": "PRC-PLT-001",
+      "photo_kind": "schematic",
+      "notes": "Cement weighing hopper, weight display and discharge indication shown in HMI. Exact feeder arrangement and physical photo pending."
+    },
+    {
+      "code": "PRC-WAT-MTR-001",
+      "name": "Batch Water Metering System",
+      "category": "DOSING_SYSTEM",
+      "photo": 1,
+      "parent": "PRC-PLT-001",
+      "photo_kind": "schematic",
+      "notes": "Water feed totalizer and hot/cold feed paths illustrated in control screen. Meter model, valves and actual pipe routes require physical verification."
+    },
+    {
+      "code": "PRC-AIR-CMP-001",
+      "name": "Plant Service Air Compressor",
+      "category": "AIR_COMPRESSOR",
+      "photo": 1,
+      "parent": "PRC-PLT-001",
+      "photo_kind": "schematic",
+      "notes": "Compressor shown as a configured plant device on the HMI. Physical photo, quantity beyond this displayed unit and nameplate not supplied."
+    },
+    {
+      "code": "PRC-LOD-HOP-001",
+      "name": "Truck Loading Hopper",
+      "category": "PROCESS_HOPPER",
+      "photo": 1,
+      "parent": "PRC-PLT-001",
+      "photo_kind": "schematic",
+      "notes": "Final receiving/loading hopper illustrated above truck discharge point. Process reference only; physical photograph pending."
+    },
+    {
+      "code": "PRC-SAF-HRN-001",
+      "name": "Batch Start Warning Horn",
+      "category": "OTHER",
+      "photo": 1,
+      "parent": "PRC-PLT-001",
+      "photo_kind": "schematic",
+      "notes": "Start-warning alarm/horn configured in HMI. Physical location, function test and equipment photograph pending."
+    },
+    {
+      "code": "PRC-SHP-BEN-001",
+      "name": "Indoor Maintenance Workbench",
+      "category": "SHOP_EQUIPMENT",
+      "photo": 8,
+      "parent": "PRC-PLT-001",
+      "photo_kind": "shared_equipment",
+      "notes": "Workbench visible in foreground beside indoor tank. Distinct from existing MIX-BP-SHELF metal storage shelf. Shared room photograph."
+    },
+    {
+      "code": "PRC-SHP-VIS-001",
+      "name": "Maintenance Bench Vise",
+      "category": "SHOP_EQUIPMENT",
+      "photo": 8,
+      "parent": "PRC-SHP-BEN-001",
+      "photo_kind": "shared_equipment",
+      "notes": "Blue bench vise visibly installed on indoor maintenance workbench. Size and manufacturer not readable."
+    },
+    {
+      "code": "PRC-SAF-EXT-001",
+      "name": "Water Heater Area Fire Extinguisher",
+      "category": "OTHER",
+      "photo": 7,
+      "parent": "PRC-PLT-001",
+      "photo_kind": "shared_equipment",
+      "notes": "Red wall-mounted extinguisher visible beside the gray personnel door in heater photo. Exact inspection tag and rating need a close-up. Other extinguishers visible in other views are not assumed to be this same unit."
+    }
+  ],
+  "verification_pending": [
+    "Map HMI cement silo icons 1 and 2 to physical storage; do not duplicate the cement pipa.",
+    "Confirm HMI 14–5 / 28–14 mm against operator terms 14 / 25 mm.",
+    "Verify actual product and physical tag for every admixture dosing channel, including the configured Not Used channel.",
+    "Nameplates, capacities, ratings and serials need close-up evidence.",
+    "Precast moulds await the next photographs; no quantity assumed."
+  ],
+  "source_photographs": [
+    {
+      "photo": 1,
+      "source_name": "01-image-1792616756654.jpg",
+      "content_hash": "5faef912f13c1b972fed5dc2d1f50d1fecc246ff835866dc77edb544aa5a8aca",
+      "bytes": 167285
+    },
+    {
+      "photo": 2,
+      "source_name": "02-image-1792616830361.jpg",
+      "content_hash": "a3bbe0a9cbfe4e9bbab3b2ec2c25ba1d71e023d97a8ba36ed899dc61f8293059",
+      "bytes": 374837
+    },
+    {
+      "photo": 3,
+      "source_name": "03-image-1792616842731.jpg",
+      "content_hash": "3d637e7962125e480a4dfb8d63581232ef05b438fe601517d53843b260f55a15",
+      "bytes": 346832
+    },
+    {
+      "photo": 4,
+      "source_name": "04-image-1792616858546.jpg",
+      "content_hash": "74c680e31f6c60787340258a95c59cc4089f05ba86905631a8ca35bc69bb63a5",
+      "bytes": 214158
+    },
+    {
+      "photo": 5,
+      "source_name": "05-image-1792616873887.jpg",
+      "content_hash": "47397d474fbaad1c293aa701f0345d4d9a121f103725ab94846d503a66750aa3",
+      "bytes": 168662
+    },
+    {
+      "photo": 6,
+      "source_name": "06-image-1792616901227.jpg",
+      "content_hash": "def3fb6f8b4b35774d83779600b6b7706b6d79e382818aa0040bd9b3c2fc7a1e",
+      "bytes": 271536
+    },
+    {
+      "photo": 7,
+      "source_name": "07-image-1792616941252.jpg",
+      "content_hash": "aa0514a2132f4e80f9f76fa3c166fd0bc371f819175f49beebb3e29b3a278b53",
+      "bytes": 210021
+    },
+    {
+      "photo": 8,
+      "source_name": "08-image-1792616964048.jpg",
+      "content_hash": "0847c820948dd4376b8c5729157be58b28ef7db58baa9d30b647e9b1884bfea9",
+      "bytes": 220806
+    },
+    {
+      "photo": 9,
+      "source_name": "09-image-1792616994964.jpg",
+      "content_hash": "9ee8f1c6705b3e7013cf8ea33c69f584769629a3e5906e503bcc44f68e31fbbd",
+      "bytes": 176672
+    }
+  ]
+}

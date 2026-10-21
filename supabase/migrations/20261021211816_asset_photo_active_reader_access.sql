@@ -1,0 +1,2 @@
+alter policy asset_photo_links_read on public.asset_photo_links using(exists(select 1 from public.profiles where id=(select auth.uid()) and active) and exists(select 1 from public.assets a where a.id=asset_id));
+alter policy asset_photo_images_read on public.asset_photo_images using(exists(select 1 from public.profiles where id=(select auth.uid()) and active) and (uploaded_by=(select auth.uid()) or exists(select 1 from public.asset_photo_links l where l.image_id=asset_photo_images.id)));
