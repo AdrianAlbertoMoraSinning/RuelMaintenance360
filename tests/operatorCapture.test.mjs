@@ -42,3 +42,28 @@ test('leadership and supervisor capture retains process, facility and other obse
  assert.equal(disabled(html),false);assert.match(html,/>Process<\/button>/);assert.match(html,/>Facility<\/button>/);assert.match(html,/>Other<\/button>/)
  assert.doesNotMatch(render(),/>Process<\/button>/)
 })
+
+// Render the actual observation screen to verify the compact layout is separate from role permissions.
+const fieldSource=readFileSync(new URL('../src/modules/ObservationsSection.tsx',import.meta.url),'utf8')
+const fieldJs=ts.transpileModule(fieldSource,{compilerOptions:{jsx:ts.JsxEmit.ReactJSX,module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText
+const fieldMod={};const nativeRequire=createRequire(import.meta.url)
+new Function('require','exports',fieldJs)(name=>{
+ if(name.endsWith('.css'))return {}
+ if(name==='./OperatorObservationForm')return mod
+ if(name==='../lib/supabase'||name==='../lib/observationOfflineStore')return {}
+ return nativeRequire(name)
+},fieldMod)
+Object.defineProperty(globalThis,'navigator',{value:{onLine:true},configurable:true})
+function fieldScreen(role,compact){return renderToStaticMarkup(React.createElement(fieldMod.default,{units:base.units,userId:'current-user',role,compact}))}
+test('all non-operator roles get the phone capture screen with their wider report types',()=>{
+ for(const role of ['super_admin','corporate_manager','unit_supervisor','technician','ohs_admin','viewer']){
+  const html=fieldScreen(role,true)
+  for(const text of ['See it. Report it.','TAKE PHOTO','RECORD VOICE','SEND OBSERVATION','Reports &amp; review','Process'])assert.ok(html.includes(text),`${role}: ${text}`)
+  assert.doesNotMatch(html,/Safety responsibility routing/)
+  assert.doesNotMatch(html,/Choose your work site first/)
+ }
+})
+test('desktop administration stays in the full review layout, while operators keep direct capture',()=>{
+ const desktop=fieldScreen('super_admin',false);assert.match(desktop,/Safety responsibility routing/);assert.match(desktop,/Report observation/);assert.doesNotMatch(desktop,/TAKE PHOTO/)
+ for(const compact of [false,true]){const operator=fieldScreen('operator',compact);assert.match(operator,/TAKE PHOTO/);assert.match(operator,/My reports/);assert.doesNotMatch(operator,/Reports &amp; review|>Process</)}
+})

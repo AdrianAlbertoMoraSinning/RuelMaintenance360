@@ -222,3 +222,15 @@ input:focus, select:focus, textarea:focus { border-color: var(--yellow-dark); bo
 .brand--compact .brand-logo { width: 112px; }
 .unit-card .brand-label { font-size: .52rem; letter-spacing: .14em; }
 .operator-install-card{background:#fff9dd;color:#243244;border:1px solid #e6ce76;border-radius:12px;padding:18px;margin:18px 0}.operator-install-card h2{font-size:20px;margin:0 0 10px}.operator-install-card p{line-height:1.5}.operator-install-card ol{padding-left:22px;line-height:1.6}.operator-install-card .primary-button{width:100%;margin:6px 0}.operator-workspace>.operator-install-card{margin:18px auto;max-width:960px}
+
+/* Field capture on phones keeps the full navigation and the signed-in role. */
+@media(max-width:780px){
+ .mobile-field-view .topbar{position:sticky;top:0;z-index:35;gap:12px;background:#edf0f3;border-bottom:1px solid #d1d9e1;height:auto;min-height:66px;padding:10px 14px}
+ .mobile-field-view .mobile-menu{min-width:44px;min-height:44px;border-radius:10px}
+ .mobile-field-identity{display:grid;gap:3px;min-width:0;flex:1}.mobile-field-identity strong{font-size:13px;letter-spacing:.06em;color:#203344}.mobile-field-identity span{font-size:12px;color:#506275;overflow-wrap:anywhere}
+ .mobile-field-view .topbar-actions{margin-left:auto}.mobile-field-view .topbar-actions .manual-button:nth-child(2),.mobile-field-view .topbar-actions .signout-button{display:none}
+ .mobile-field-view .content.operator-workspace{width:100%;max-width:880px;margin:0 auto;padding:18px 12px 40px;box-sizing:border-box}
+ .mobile-field-view .role-workspace-switch{margin-bottom:20px}.mobile-field-view .role-workspace-switch button{padding:12px 8px;font-size:16px}
+ .mobile-field-view .operator-report-kind{flex-wrap:wrap}.mobile-field-view .operator-report-kind button{flex:1 1 100px}
+ .mobile-field-view .sidebar{z-index:60}.mobile-field-view .todo-create-form :is(input,select,textarea){font-size:16px;min-height:48px;max-width:100%}
+}
