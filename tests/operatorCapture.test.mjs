@@ -50,6 +50,7 @@ const fieldMod={};const nativeRequire=createRequire(import.meta.url)
 new Function('require','exports',fieldJs)(name=>{
  if(name.endsWith('.css'))return {}
  if(name==='./OperatorObservationForm')return mod
+ if(name==='./ObservationEvidence')return {__esModule:true,default:()=>null}
  if(name==='../lib/supabase'||name==='../lib/observationOfflineStore')return {}
  return nativeRequire(name)
 },fieldMod)
@@ -66,4 +67,22 @@ test('all non-operator roles get the phone capture screen with their wider repor
 test('desktop administration stays in the full review layout, while operators keep direct capture',()=>{
  const desktop=fieldScreen('super_admin',false);assert.match(desktop,/Safety responsibility routing/);assert.match(desktop,/Report observation/);assert.doesNotMatch(desktop,/TAKE PHOTO/)
  for(const compact of [false,true]){const operator=fieldScreen('operator',compact);assert.match(operator,/TAKE PHOTO/);assert.match(operator,/My reports/);assert.doesNotMatch(operator,/Reports &amp; review|>Process</)}
+})
+
+const evidenceSource=readFileSync(new URL('../src/modules/ObservationEvidence.tsx',import.meta.url),'utf8')
+const evidenceJs=ts.transpileModule(evidenceSource,{compilerOptions:{jsx:ts.JsxEmit.ReactJSX,module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText
+const evidenceMod={};new Function('require','exports',evidenceJs)(name=>name==='../lib/supabase'?{}:nativeRequire(name),evidenceMod)
+test('review shows uploaded photos inline, keeps captions literal, and links PDFs without popup scripts',()=>{
+ const image={id:'photo',storage_path:'private/photo.jpg',file_name:'photo.jpg',mime_type:'image/jpeg',caption:'<script>photo note</script>',url:'https://example.test/signed/photo'}
+ const pdf={...image,id:'pdf',mime_type:'application/pdf',file_name:'report.pdf',caption:'Document',url:'https://example.test/signed/pdf'}
+ const html=renderToStaticMarkup(React.createElement(evidenceMod.ObservationEvidenceGallery,{items:[image,pdf],failed:[],onImageError:()=>{}}))
+ assert.match(html,/<img[^>]*src="https:\/\/example.test\/signed\/photo"/);assert.equal((html.match(/<img /g)||[]).length,1)
+ assert.match(html,/Open full photo/);assert.match(html,/Open report.pdf/);assert.match(html,/rel="noopener noreferrer"/)
+ assert.match(html,/&lt;script&gt;photo note&lt;\/script&gt;/);assert.doesNotMatch(html,/<script>/)
+})
+test('expired or denied photo links show a retry message instead of a broken or public image',()=>{
+ for(const [url,failed] of [[null,[]],['https://example.test/expired',['photo']]]){
+ const html=renderToStaticMarkup(React.createElement(evidenceMod.ObservationEvidenceGallery,{items:[{id:'photo',mime_type:'image/jpeg',file_name:'photo.jpg',url,caption:null}],failed,onImageError:()=>{}}))
+ assert.doesNotMatch(html,/<img|href=/);assert.match(html,/Refresh photos to retry/)
+ }
 })
