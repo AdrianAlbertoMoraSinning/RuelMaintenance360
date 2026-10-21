@@ -40,21 +40,24 @@ Deno.serve(async (req)=>{
       const email=String(target.email||'').trim().toLowerCase()
       if(!/^\S+@\S+\.\S+$/.test(email)||email.endsWith('.invalid'))throw new Error('A valid personal sign-in email is required')
       const emailKey=Deno.env.get('RESEND_API_KEY'),emailFrom=Deno.env.get('RUEL_REPORT_FROM')
-      if(!emailKey||!emailFrom)throw new Error('System email delivery is not configured')
+      const canSend=Boolean(emailKey&&emailFrom)&&body.send_email!==false
       const{data:identity,error:identityError}=await admin.auth.admin.getUserById(target.id)
       if(identityError||identity.user?.id!==target.id||identity.user?.email?.toLowerCase()!==email)throw new Error('Sign-in email does not match this profile. Review the account email before resending.')
       const{data:link,error:linkError}=await admin.auth.admin.generateLink({type:'recovery',email,options:{redirectTo:'https://ruelmaintenance360.netlify.app/'}})
       if(linkError||!link?.properties?.action_link||link.user?.id!==target.id)throw new Error('Unable to prepare a secure invitation for this account')
-      const delivery=await fetch('https://api.resend.com/emails',{method:'POST',headers:{Authorization:'Bearer '+emailKey,'Content-Type':'application/json'},body:JSON.stringify({from:emailFrom,to:[email],subject:'RUEL Maintenance 360 · App invitation & access',html:appInvitationHtml({name:target.full_name||email,email,role:target.role.replaceAll('_',' '),url:link.properties.action_link})})})
-      if(!delivery.ok)throw new Error('Invitation email was not accepted by the email service. Please try again.')
-      await admin.from('admin_security_events').insert({actor_user_id:user.id,target_user_id:target.id,action:'app_invitation_resent'})
-      return new Response(JSON.stringify({ok:true,email_sent:true,recipient_email:email,message:'App invitation sent to the user’s email.'}),{headers:{...cors,'Cache-Control':'no-store'}})
+      let emailSent=false
+      if(canSend){try{
+        const delivery=await fetch('https://api.resend.com/emails',{method:'POST',headers:{Authorization:'Bearer '+emailKey,'Content-Type':'application/json'},body:JSON.stringify({from:emailFrom,to:[email],subject:'RUEL Maintenance 360 · App invitation & access',html:appInvitationHtml({name:target.full_name||email,email,role:target.role.replaceAll('_',' '),url:link.properties.action_link})})})
+        emailSent=delivery.ok
+      }catch{/* Keep the prepared invitation available for manual delivery. */}}
+      const message=emailSent?'App invitation accepted for delivery to the user’s email.':body.send_email===false?'Invitation prepared. Copy it and email it only to this user.':!emailKey||!emailFrom?'Automatic email is not configured. Copy the invitation below and email it to this user.':'Automatic email could not be confirmed. Use the invitation below for manual delivery; check for an existing email before sending it again.'
+      await admin.from('admin_security_events').insert({actor_user_id:user.id,target_user_id:target.id,action:emailSent?'app_invitation_resent':'app_invitation_prepared'})
+      return new Response(JSON.stringify({ok:true,email_sent:emailSent,recipient_email:email,recipient_name:target.full_name,mode:'recovery',...(!emailSent?{activation_url:link.properties.action_link}:{}),message}),{headers:{...cors,'Cache-Control':'no-store'}})
     }
 
     if(action==='create_forwarded_invitation'){
-      const sendEmail=body.send_email===true
       const emailKey=Deno.env.get('RESEND_API_KEY'),emailFrom=Deno.env.get('RUEL_REPORT_FROM')
-      if(sendEmail&&(!emailKey||!emailFrom))return new Response(JSON.stringify({error:'System email delivery is not configured. Prepare the supervisor link and send the supervisor email from your mailbox.'}),{status:503,headers:cors})
+      const sendEmail=body.send_email===true&&Boolean(emailKey&&emailFrom)
       const rosterQuery=admin.from('personnel_onboarding').select('profile_id,full_name,phone,reporting_manager_id,status');
       const {data:roster,error:rosterError}=await (body.user_id?rosterQuery.eq('profile_id',String(body.user_id)):rosterQuery.eq('id',String(body.onboarding_id||''))).single()
       if(rosterError||!roster?.profile_id)throw new Error('Create the operator account first')
