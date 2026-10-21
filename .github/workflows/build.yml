@@ -17,4 +17,5 @@ jobs:
       - run: npm install --no-audit --no-fund
       - run: npm run test:auth
       - run: npm run test:operator
+      - run: npm run test:tasks
       - run: npm run build

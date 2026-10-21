@@ -36,3 +36,9 @@ test('camera captures from the rear camera, previews attachments, and reports an
  assert.match(html,/capture="environment"/);assert.match(html,/Observation photo 1/);assert.match(html,/Remove photo 1/)
  assert.match(render({assets:[]}),/No equipment is registered for this site/)
 })
+
+test('leadership and supervisor capture retains process, facility and other observations',()=>{
+ const html=render({allowAllTypes:true,form:{...base.form,observation_type:'process',description:'Loading procedure improvement'}})
+ assert.equal(disabled(html),false);assert.match(html,/>Process<\/button>/);assert.match(html,/>Facility<\/button>/);assert.match(html,/>Other<\/button>/)
+ assert.doesNotMatch(render(),/>Process<\/button>/)
+})
