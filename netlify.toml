@@ -9,3 +9,11 @@
   from = "/*"
   to = "/index.html"
   status = 200
+
+[functions]
+  directory = "netlify/functions"
+  node_bundler = "esbuild"
+
+[functions."part-photo-match-local"]
+  external_node_modules = ["sharp", "@techstark/opencv-js"]
+  included_files = ["node_modules/@img/**", "node_modules/@techstark/opencv-js/dist/**"]
