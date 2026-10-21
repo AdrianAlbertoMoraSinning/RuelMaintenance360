@@ -1,0 +1,1 @@
+create index field_observation_message_read_user on public.field_observation_message_reads(user_id);

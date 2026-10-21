@@ -11,7 +11,7 @@
     "test:materials": "node --experimental-strip-types --test --test-concurrency=1 tests/partMaterialsAndPhotos.test.mjs tests/partMachineLookup.test.mjs tests/localPhotoEngine.test.mjs tests/localPhotoHandler.test.mjs",
     "test:ai": "node --experimental-strip-types --test tests/trustedAiSources.test.mjs",
     "test:auth": "node --experimental-strip-types --test tests/authFlow.test.mjs tests/phoneOnboarding.test.mjs tests/operatorIdentity.test.mjs tests/operatorRedemption.test.mjs tests/invitationRecipients.test.mjs tests/operatorInvitationResend.test.mjs",
-    "test:operator": "node --experimental-strip-types --test tests/operatorCapture.test.mjs",
+    "test:operator": "node --experimental-strip-types --test tests/operatorCapture.test.mjs tests/observationConversation.test.mjs",
     "test:tasks": "node --experimental-strip-types --test tests/taskModel.test.mjs tests/taskConversation.test.mjs tests/taskDictation.test.mjs"
   },
   "dependencies": {
