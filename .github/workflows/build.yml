@@ -18,4 +18,5 @@ jobs:
       - run: npm run test:auth
       - run: npm run test:operator
       - run: npm run test:tasks
+      - run: npm run test:materials
       - run: npm run build
