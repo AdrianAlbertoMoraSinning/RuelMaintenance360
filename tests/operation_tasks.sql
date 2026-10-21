@@ -63,7 +63,8 @@ begin
  perform public.mark_operation_task_seen(root,cursor_id);
  if not exists(select 1 from public.operation_task_inbox where id=root and has_updates) then raise exception 'Old read cursor hid newer activity';end if;
  perform set_config('request.jwt.claim.sub',other_shareholder::text,true);
- if exists(select 1 from public.operation_tasks where id in(root,mt,st,ot)) then raise exception 'Unrelated committee member sees private tasks';end if;
+ if exists(select 1 from public.operation_tasks where id in(root,mt)) then raise exception 'Unrelated committee member sees corporate private tasks';end if;
+ if not exists(select 1 from public.operation_tasks where id=ot) then raise exception 'Corporate leadership cannot inspect unit task activity';end if;
  perform set_config('request.jwt.claim.sub',manager::text,true);
  select count(*) into before_count from public.operation_tasks;
  perform public.refresh_operation_task_sources();
