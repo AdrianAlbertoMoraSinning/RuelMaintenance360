@@ -2,19 +2,20 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import {readFileSync} from 'node:fs'
 import ts from 'typescript'
+import {appInvitationHtml} from '../supabase/functions/_shared/appInvitation.ts'
 import {operatorUsername,operatorAuthAddress} from '../supabase/functions/_shared/operatorIdentity.ts'
 import {operatorInvitationMode,operatorAccessUrl} from '../supabase/functions/_shared/operatorInvitation.ts'
 import {supervisorInvitationHtml} from '../supabase/functions/_shared/supervisorInvitation.ts'
 import {supervisorInvitationRecipients} from '../supabase/functions/_shared/invitationRecipients.ts'
 const source=readFileSync(new URL('../supabase/functions/admin-user-security/index.ts',import.meta.url),'utf8').replace(/^import .*$/gm,'')
 const js=ts.transpileModule(source,{compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.None}}).outputText
-function fixture({active=true,missingManager=false,callerRole='super_admin',deliveryFails=false}={}){
+function fixture({active=true,missingManager=false,callerRole='super_admin',deliveryFails=false,targetRole='operator',targetActive=true,emailMismatch=false}={}){
  const id='b6a1f147-ae25-4b3e-bdb5-f35c5b4addba',emails=[],rpcs=[],events=[];let serve
- const profiles={admin:{id:'admin',active:true,role:callerRole},[id]:{id,active:true,role:'operator',full_name:'DJ <operator>',phone:'+17806252210',email:null,corporate_manager_id:'don'},don:{id:'don',active:true,email:'don@ruelconcreteltd.com',full_name:'Don',corporate_manager_id:missingManager?null:'adrian'},adrian:{id:'adrian',active:true,email:'concrete@ruelconcreteltd.com',full_name:'Adrian'}}
- const admin={from(table){let key;return {select(){return this},eq(_,v){key=v;return this},async single(){return{data:table==='personnel_onboarding'?{profile_id:id,status:active?'active':'pending_invitation'}:profiles[key],error:null}},async insert(v){events.push(v);return{error:null}}}},rpc:async(name)=>{rpcs.push(name);return{data:'2026-10-25T12:00:00Z',error:null}},auth:{admin:new Proxy({},{get(){throw new Error('Must not change an Auth account during resend')}})}}
+ const profiles={admin:{id:'admin',active:true,role:callerRole},[id]:{id,active:targetActive,role:targetRole,full_name:'DJ <operator>',phone:'+17806252210',email:targetRole==='operator'?null:'user@ruelconcreteltd.com',corporate_manager_id:'don'},don:{id:'don',active:true,email:'don@ruelconcreteltd.com',full_name:'Don',corporate_manager_id:missingManager?null:'adrian'},adrian:{id:'adrian',active:true,email:'concrete@ruelconcreteltd.com',full_name:'Adrian'}}
+ const admin={from(table){let key;return {select(){return this},eq(_,v){key=v;return this},async single(){return{data:table==='personnel_onboarding'?{profile_id:id,status:active?'active':'pending_invitation'}:profiles[key],error:null}},async insert(v){events.push(v);return{error:null}}}},rpc:async(name)=>{rpcs.push(name);return{data:'2026-10-25T12:00:00Z',error:null}},auth:{admin:{getUserById:async()=>({data:{user:{id,email:emailMismatch?'other@ruelconcreteltd.com':'user@ruelconcreteltd.com'}},error:null}),generateLink:async(params)=>{rpcs.push(params);return{data:{user:{id},properties:{action_link:'https://test.invalid/secure-recovery-token'}},error:null}}}}}
  const caller={auth:{getUser:async()=>({data:{user:{id:'admin'}},error:null})}}
- new Function('createClient','operatorUsername','operatorAuthAddress','supervisorInvitationRecipients','supervisorInvitationHtml','operatorInvitationMode','operatorAccessUrl','Deno','fetch',js)((_,__,opts)=>opts?.global?caller:admin,operatorUsername,operatorAuthAddress,supervisorInvitationRecipients,supervisorInvitationHtml,operatorInvitationMode,operatorAccessUrl,{serve:fn=>serve=fn,env:{get:key=>key}},async(url,opts)=>{emails.push(JSON.parse(opts.body));return new Response(JSON.stringify(deliveryFails?{error:'rejected'}:{id:'email-1'}),{status:deliveryFails?503:200})})
- return {emails,rpcs,events,send:()=>serve(new Request('https://test.invalid',{method:'POST',body:JSON.stringify({action:'create_forwarded_invitation',user_id:id,send_email:true})}))}
+ new Function('createClient','appInvitationHtml','operatorUsername','operatorAuthAddress','supervisorInvitationRecipients','supervisorInvitationHtml','operatorInvitationMode','operatorAccessUrl','Deno','fetch',js)((_,__,opts)=>opts?.global?caller:admin,appInvitationHtml,operatorUsername,operatorAuthAddress,supervisorInvitationRecipients,supervisorInvitationHtml,operatorInvitationMode,operatorAccessUrl,{serve:fn=>serve=fn,env:{get:key=>key}},async(url,opts)=>{emails.push(JSON.parse(opts.body));return new Response(JSON.stringify(deliveryFails?{error:'rejected'}:{id:'email-1'}),{status:deliveryFails?503:200})})
+ return {emails,rpcs,events,send:(action='create_forwarded_invitation')=>serve(new Request('https://test.invalid',{method:'POST',body:JSON.stringify({action,user_id:id,send_email:true})}))}
 }
 test('active operator can repeatedly resend to supervisor + manager without issuing tokens or changing Auth',async()=>{
  const h=fixture();for(let n=0;n<2;n++){const r=await h.send();assert.equal(r.status,200);const body=await r.json();assert.equal(body.mode,'access_installation');assert.equal(body.activation_url,operatorAccessUrl());assert.equal(body.expires_at,null);assert.equal(body.delivery_id,'email-1')}
@@ -28,4 +29,21 @@ test('missing manager, unauthorized caller and rejected delivery cannot report a
 })
 test('installed app launch stays reusable and never stores an activation token or login in its manifest',()=>{
  const manifest=JSON.parse(readFileSync(new URL('../public/operator.webmanifest',import.meta.url),'utf8'));assert.equal(manifest.name,'RUEL Operators');assert.equal(manifest.start_url,'/?operator_app=1');assert.equal(manifest.display,'standalone');assert.doesNotMatch(JSON.stringify(manifest),/invite=|password|op-b6/)
+})
+
+test('all non-operator profiles receive private recovery and installation instructions without account changes',async()=>{
+ for(const targetRole of ['super_admin','it_admin','corporate_manager','ohs_admin','unit_supervisor','technician','viewer']){
+  const h=fixture({targetRole}),response=await h.send('resend_app_invitation'),body=await response.json()
+  assert.equal(response.status,200,JSON.stringify(body));assert.equal(body.email_sent,true)
+  assert.deepEqual(h.emails[0].to,['user@ruelconcreteltd.com']);assert.equal(h.emails[0].cc,undefined)
+  assert.match(h.emails[0].html,/Set password/);assert.match(h.emails[0].html,/Add to Home Screen/);assert.match(h.emails[0].html,/DJ &lt;operator&gt;/)
+  assert.equal(h.rpcs[0].type,'recovery');assert.equal(h.rpcs[0].options.redirectTo,'https://ruelmaintenance360.netlify.app/')
+  assert.doesNotMatch(JSON.stringify(body),/secure-recovery-token/);assert.equal(h.events[0].action,'app_invitation_resent')
+ }
+})
+test('general invitation rejects unauthorized admins, inactive accounts, mismatched identities and delivery failure',async()=>{
+ for(const opts of [{callerRole:'it_admin'},{callerRole:'operator'},{targetActive:false},{emailMismatch:true},{deliveryFails:true}]){
+  const h=fixture({targetRole:'corporate_manager',...opts}),r=await h.send('resend_app_invitation')
+  assert.notEqual(r.status,200);assert.equal(h.events.length,0);if(!opts.deliveryFails)assert.equal(h.emails.length,0)
+ }
 })

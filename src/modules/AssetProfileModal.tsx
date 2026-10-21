@@ -71,7 +71,7 @@ export default function AssetProfileModal({asset,role,onClose}:Props){
   return <div className="modal-backdrop asset-profile-backdrop" onClick={onClose}>
     <section className="asset-profile-card" onClick={e=>e.stopPropagation()}>
       <div className="form-title"><div><span className="eyebrow">Asset dossier</span><h2>{asset.asset_code} — {asset.name}</h2><p className="muted">Technical identity, accountability, controlled documents and maintenance history in one place.</p></div><button className="icon-button" onClick={onClose}>×</button></div>
-      <div className="asset-owner-banner"><PersonAvatar avatarPath={primaryPerson?.avatar_url} name={primaryPerson?.full_name||primaryPerson?.email||'Unassigned'} size="lg"/><div><span className="eyebrow">Primary responsible</span><h3>{primaryPerson?personName(primaryPerson.id):'Unassigned'}</h3><p>{primaryPerson?.position_title||'Assign a responsible person for maintenance accountability.'}</p></div></div>
+      <AssetPhotos assetId={asset.id} role={role}/><div className="asset-owner-banner"><PersonAvatar avatarPath={primaryPerson?.avatar_url} name={primaryPerson?.full_name||primaryPerson?.email||'Unassigned'} size="lg"/><div><span className="eyebrow">Primary responsible</span><h3>{primaryPerson?personName(primaryPerson.id):'Unassigned'}</h3><p>{primaryPerson?.position_title||'Assign a responsible person for maintenance accountability.'}</p></div></div>
       <div className="asset-profile-summary">
         <span><small>Category</small><b>{asset.asset_category.replaceAll('_',' ')}</b></span>
         <span><small>Manufacturer / model</small><b>{[asset.manufacturer,asset.model].filter(Boolean).join(' · ')||'Pending'}</b></span>
@@ -80,7 +80,7 @@ export default function AssetProfileModal({asset,role,onClose}:Props){
         <span><small>Hours</small><b>{asset.hour_meter??'—'}</b></span>
         <span><small>Odometer</small><b>{asset.odometer_km!=null?`${asset.odometer_km} km`:'—'}</b></span>
       </div>
-      {asset.notes&&<p className="asset-identity-notes">{asset.notes}</p>}<AssetPhotos assetId={asset.id} role={role}/>{message&&<div className={message.includes('added')||message.includes('ended')?'success-box':'error-box'}>{message}</div>}
+      {asset.notes&&<p className="asset-identity-notes">{asset.notes}</p>}{message&&<div className={message.includes('added')||message.includes('ended')?'success-box':'error-box'}>{message}</div>}
       {loading?<div className="loading-panel">Loading asset dossier…</div>:<div className="asset-profile-grid">
         <div className="profile-panel"><div className="section-heading small-heading"><div><span className="eyebrow">Accountability</span><h3>Asset team</h3></div><span className="count-chip">{activeAssignments.length} active</span></div>
           <div className="access-list">{activeAssignments.length===0?<div className="empty-table compact">No active asset responsibilities.</div>:activeAssignments.map(a=>{const p=personFor(a.user_id);return <div className="access-card" key={a.id}><div className="person-cell"><PersonAvatar avatarPath={p?.avatar_url} name={p?.full_name||p?.email} size="sm"/><span><strong>{personName(a.user_id)}</strong><small>{a.responsibility.replaceAll('_',' ')} · since {a.starts_on}</small></span></div>{canAssign&&a.responsibility!=='primary'&&<button className="icon-button small" onClick={()=>endAssignment(a)}>×</button>}</div>})}</div>

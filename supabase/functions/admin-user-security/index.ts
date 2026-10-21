@@ -1,3 +1,4 @@
+import {appInvitationHtml} from '../_shared/appInvitation.ts'
 import {operatorInvitationMode,operatorAccessUrl} from '../_shared/operatorInvitation.ts'
 import {supervisorInvitationRecipients} from '../_shared/invitationRecipients.ts'
 import {supervisorInvitationHtml} from '../_shared/supervisorInvitation.ts'
@@ -29,6 +30,26 @@ Deno.serve(async (req)=>{
 
     const body=await req.json()
     const action=String(body.action||'')
+
+    if(action==='resend_app_invitation'){
+      if(caller.role!=='super_admin')return new Response(JSON.stringify({error:'Super admin access required'}),{status:403,headers:cors})
+      const{data:target,error:targetError}=await admin.from('profiles').select('id,full_name,email,role,active').eq('id',String(body.user_id||'')).single()
+      if(targetError||!target)throw new Error('User profile not found')
+      if(!target.active)throw new Error('Activate this account before sending an invitation')
+      if(target.role==='operator')throw new Error('Use the operator invitation to supervisor action')
+      const email=String(target.email||'').trim().toLowerCase()
+      if(!/^\S+@\S+\.\S+$/.test(email)||email.endsWith('.invalid'))throw new Error('A valid personal sign-in email is required')
+      const emailKey=Deno.env.get('RESEND_API_KEY'),emailFrom=Deno.env.get('RUEL_REPORT_FROM')
+      if(!emailKey||!emailFrom)throw new Error('System email delivery is not configured')
+      const{data:identity,error:identityError}=await admin.auth.admin.getUserById(target.id)
+      if(identityError||identity.user?.id!==target.id||identity.user?.email?.toLowerCase()!==email)throw new Error('Sign-in email does not match this profile. Review the account email before resending.')
+      const{data:link,error:linkError}=await admin.auth.admin.generateLink({type:'recovery',email,options:{redirectTo:'https://ruelmaintenance360.netlify.app/'}})
+      if(linkError||!link?.properties?.action_link||link.user?.id!==target.id)throw new Error('Unable to prepare a secure invitation for this account')
+      const delivery=await fetch('https://api.resend.com/emails',{method:'POST',headers:{Authorization:'Bearer '+emailKey,'Content-Type':'application/json'},body:JSON.stringify({from:emailFrom,to:[email],subject:'RUEL Maintenance 360 · App invitation & access',html:appInvitationHtml({name:target.full_name||email,email,role:target.role.replaceAll('_',' '),url:link.properties.action_link})})})
+      if(!delivery.ok)throw new Error('Invitation email was not accepted by the email service. Please try again.')
+      await admin.from('admin_security_events').insert({actor_user_id:user.id,target_user_id:target.id,action:'app_invitation_resent'})
+      return new Response(JSON.stringify({ok:true,email_sent:true,recipient_email:email,message:'App invitation sent to the user’s email.'}),{headers:{...cors,'Cache-Control':'no-store'}})
+    }
 
     if(action==='create_forwarded_invitation'){
       const sendEmail=body.send_email===true
