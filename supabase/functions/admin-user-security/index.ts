@@ -62,7 +62,7 @@ Deno.serve(async (req)=>{
         if(!delivery.ok)throw new Error('Supervisor email was not accepted by the email service. Please retry sending from the operator profile.')
         const sent=await delivery.json();deliveryId=sent.id||null
       }
-      await admin.from('admin_security_events').insert({actor_user_id:user.id,target_user_id:roster.profile_id,action:sendEmail?'supervisor_operator_'+mode+'_email_sent':'supervisor_forwarded_invitation_prepared'})
+      await admin.from('admin_security_events').insert({actor_user_id:user.id,target_user_id:roster.profile_id,action:'supervisor_forwarded_invitation_prepared'})
       return new Response(JSON.stringify({ok:true,email_sent:sendEmail,delivery_id:deliveryId,mode,activation_url:activationUrl,expires_at:expires,supervisor_email:supervisor.email,supervisor_name:supervisor.full_name,manager_email:manager?.email,manager_name:manager?.full_name,operator_name:operator.full_name,operator_phone:operator.phone,operator_username:username,message:mode==='activation'?'Personal activation link prepared. Forward only to this operator.':'Access and installation link prepared. Existing account and password remain unchanged.'}),{headers:{...cors,'Cache-Control':'no-store'}})
     }
 
