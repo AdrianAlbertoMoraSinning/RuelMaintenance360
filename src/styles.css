@@ -221,3 +221,4 @@ input:focus, select:focus, textarea:focus { border-color: var(--yellow-dark); bo
 .login-card .brand-logo { width: 290px; }
 .brand--compact .brand-logo { width: 112px; }
 .unit-card .brand-label { font-size: .52rem; letter-spacing: .14em; }
+.operator-install-card{background:#fff9dd;color:#243244;border:1px solid #e6ce76;border-radius:12px;padding:18px;margin:18px 0}.operator-install-card h2{font-size:20px;margin:0 0 10px}.operator-install-card p{line-height:1.5}.operator-install-card ol{padding-left:22px;line-height:1.6}.operator-install-card .primary-button{width:100%;margin:6px 0}.operator-workspace>.operator-install-card{margin:18px auto;max-width:960px}

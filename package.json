@@ -10,7 +10,7 @@
     "preview": "vite preview",
     "test:materials": "node --experimental-strip-types --test tests/partMaterialsAndPhotos.test.mjs",
     "test:ai": "node --experimental-strip-types --test tests/trustedAiSources.test.mjs",
-    "test:auth": "node --experimental-strip-types --test tests/authFlow.test.mjs tests/phoneOnboarding.test.mjs tests/operatorIdentity.test.mjs tests/operatorRedemption.test.mjs tests/invitationRecipients.test.mjs"
+    "test:auth": "node --experimental-strip-types --test tests/authFlow.test.mjs tests/phoneOnboarding.test.mjs tests/operatorIdentity.test.mjs tests/operatorRedemption.test.mjs tests/invitationRecipients.test.mjs tests/operatorInvitationResend.test.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.58.0",
