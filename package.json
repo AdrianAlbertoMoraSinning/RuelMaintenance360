@@ -12,7 +12,7 @@
     "test:ai": "node --experimental-strip-types --test tests/trustedAiSources.test.mjs",
     "test:auth": "node --experimental-strip-types --test tests/authFlow.test.mjs tests/phoneOnboarding.test.mjs tests/operatorIdentity.test.mjs tests/operatorRedemption.test.mjs tests/invitationRecipients.test.mjs tests/operatorInvitationResend.test.mjs",
     "test:operator": "node --experimental-strip-types --test tests/operatorCapture.test.mjs",
-    "test:tasks": "node --experimental-strip-types --test tests/taskModel.test.mjs tests/taskConversation.test.mjs"
+    "test:tasks": "node --experimental-strip-types --test tests/taskModel.test.mjs tests/taskConversation.test.mjs tests/taskDictation.test.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.58.0",
