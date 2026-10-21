@@ -234,3 +234,5 @@ input:focus, select:focus, textarea:focus { border-color: var(--yellow-dark); bo
  .mobile-field-view .operator-report-kind{flex-wrap:wrap}.mobile-field-view .operator-report-kind button{flex:1 1 100px}
  .mobile-field-view .sidebar{z-index:60}.mobile-field-view .todo-create-form :is(input,select,textarea){font-size:16px;min-height:48px;max-width:100%}
 }
+
+.performance-back-button{min-height:44px;white-space:normal;text-align:left;margin:0 0 12px}.form-title .performance-back-button{font-size:12px;max-width:220px;margin:0 8px 0 0}
