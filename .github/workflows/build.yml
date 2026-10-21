@@ -16,4 +16,5 @@ jobs:
           node-version: 22
       - run: npm install --no-audit --no-fund
       - run: npm run test:auth
+      - run: npm run test:operator
       - run: npm run build

@@ -1,0 +1,38 @@
+import test from 'node:test'
+import assert from 'node:assert/strict'
+import {readFileSync} from 'node:fs'
+import {createRequire} from 'node:module'
+import ts from 'typescript'
+import React from 'react'
+import {renderToStaticMarkup} from 'react-dom/server'
+const source=readFileSync(new URL('../src/modules/OperatorObservationForm.tsx',import.meta.url),'utf8')
+const js=ts.transpileModule(source,{compilerOptions:{jsx:ts.JsxEmit.ReactJSX,module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText
+const mod={};new Function('require','exports',js)(createRequire(import.meta.url),mod)
+const base={form:{business_unit_id:'unit',asset_id:'',observation_type:'equipment',description:'',immediate_concern:'normal'},setForm:()=>{},units:[{id:'unit',name:'Test unit'}],assets:[{id:'asset',business_unit_id:'unit',asset_code:'MIX-001',name:'Mixer'}],photos:[],recording:false,saving:false,preparingPhotos:false,online:true,loading:false,onSubmit:()=>{},onVoice:()=>{},onPhotos:()=>{},onRemovePhoto:()=>{},onPhotoCaption:()=>{}}
+function render(p={}){return renderToStaticMarkup(React.createElement(mod.default,{...base,...p}))}
+function disabled(html){return /<button type="submit"[^>]*disabled/.test(html)}
+test('equipment report requires an asset from its site and a description before sending',()=>{
+ assert.equal(disabled(render()),true)
+ assert.equal(disabled(render({form:{...base.form,description:'Oil leak'}})),true)
+ assert.equal(disabled(render({form:{...base.form,asset_id:'asset',description:'Oil leak'}})),false)
+ assert.equal(disabled(render({form:{...base.form,asset_id:'asset',description:'Oil leak',business_unit_id:'another-unit'}})),true)
+})
+test('recording and photo preparation block sending; preparing a photo is never labelled as sending',()=>{
+ const form={...base.form,asset_id:'asset',description:'Oil leak'}
+ assert.equal(disabled(render({form,recording:true})),true)
+ assert.match(render({form,recording:true}),/STOP RECORDING/)
+ const prepared=render({form,preparingPhotos:true});assert.equal(disabled(prepared),true);assert.match(prepared,/PREPARING PHOTOS/);assert.doesNotMatch(prepared,/SENDING/)
+})
+test('offline reports are clearly queued rather than falsely reported as delivered',()=>{
+ const html=render({form:{...base.form,asset_id:'asset',description:'Oil leak'},online:false})
+ assert.match(html,/SAVE ON THIS PHONE/);assert.match(html,/Will send when connection returns/)
+})
+test('safety reporting remains possible without a specific machine and exposes urgent instructions',()=>{
+ const html=render({form:{...base.form,observation_type:'safety',description:'Unsafe walkway'}})
+ assert.equal(disabled(html),false);assert.match(html,/Notify your supervisor now/)
+})
+test('camera captures from the rear camera, previews attachments, and reports an empty asset catalogue',()=>{
+ const html=render({photos:[{id:'photo',url:'blob:local-photo',caption:''}]})
+ assert.match(html,/capture="environment"/);assert.match(html,/Observation photo 1/);assert.match(html,/Remove photo 1/)
+ assert.match(render({assets:[]}),/No equipment is registered for this site/)
+})
