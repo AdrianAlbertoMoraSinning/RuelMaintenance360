@@ -7,13 +7,15 @@ import './asset-profile.css'
 type Asset={id:string;business_unit_id:string;asset_code:string;name:string;asset_category:string;manufacturer:string|null;model:string|null}
 type DocumentRow={id:string;asset_id:string|null;business_unit_id:string|null;title:string;document_type:string;version:string|null;manufacturer:string|null;storage_path:string}
 type Chunk={id:string;document_id:string;page_number:number|null;section_title:string|null;content:string}
-type WorkOrder={id:string;asset_id:string;work_order_number:number;title:string;problem_description:string|null;diagnosis:string|null;corrective_action:string|null;status:string;created_at:string}
-type Source={id:string;label:string;content:string;kind:'manual'|'work_order';documentId?:string}
+type WorkOrder={id:string;asset_id:string;work_order_number:number;title:string;problem_description:string|null;diagnosis:string|null;corrective_action:string|null;status:string;created_at:string;source_observation_id:string|null}
+type Source={id:string;label:string;content:string;kind:'manual'|'work_order'|'observation';documentId?:string}
+type AcceptedObservation={observation_id:string;observation_number:number;asset_id:string|null;description:string;resolution_notes:string|null;accepted_at:string;acceptance_note:string}
 type Props={units:BusinessUnit[];userId:string}
 
 export default function TechnicalAssistantSection({units,userId}:Props){
   const [assets,setAssets]=useState<Asset[]>([])
   const [documents,setDocuments]=useState<DocumentRow[]>([])
+  const [acceptedIds,setAcceptedIds]=useState<string[]>([])
   const [orders,setOrders]=useState<WorkOrder[]>([])
   const [assetId,setAssetId]=useState('')
   const [question,setQuestion]=useState('')
@@ -26,23 +28,25 @@ export default function TechnicalAssistantSection({units,userId}:Props){
   const [searching,setSearching]=useState(false)
   const [message,setMessage]=useState('')
 
-  useEffect(()=>{async function load(){setLoading(true);const [{data:a},{data:d},{data:w}]=await Promise.all([
+  useEffect(()=>{async function load(){setLoading(true);const [{data:a},{data:d},{data:w},{data:accepted}]=await Promise.all([
     supabase.from('assets').select('id,business_unit_id,asset_code,name,asset_category,manufacturer,model').order('asset_code'),
-    supabase.from('documents').select('id,asset_id,business_unit_id,title,document_type,version,manufacturer,storage_path').eq('active',true),
-    supabase.from('work_orders_visible').select('id,asset_id,work_order_number,title,problem_description,diagnosis,corrective_action,status,created_at').order('created_at',{ascending:false}).limit(500)
-  ]);setAssets((a||[]) as Asset[]);setDocuments((d||[]) as DocumentRow[]);setOrders((w||[]) as WorkOrder[]);setLoading(false)}load()},[])
+    supabase.from('documents').select('id,asset_id,business_unit_id,title,document_type,version,manufacturer,storage_path,metadata').eq('active',true),
+    supabase.from('work_orders_visible').select('id,asset_id,work_order_number,title,problem_description,diagnosis,corrective_action,status,created_at,source_observation_id').order('created_at',{ascending:false}).limit(500),
+    supabase.from('observation_ai_memory').select('observation_id')
+  ]);setAssets((a||[]) as Asset[]);setDocuments((d||[]).filter((doc:any)=>!doc.metadata?.training&&!doc.metadata?.mock_only) as DocumentRow[]);setAcceptedIds((accepted||[]).map((o:any)=>o.observation_id));setOrders((w||[]) as WorkOrder[]);setLoading(false)}load()},[])
 
   const selected=assets.find(a=>a.id===assetId)||null
   const assetDocuments=useMemo(()=>documents.filter(d=>d.asset_id===assetId||(!d.asset_id&&d.business_unit_id===selected?.business_unit_id)),[documents,assetId,selected?.business_unit_id])
-  const assetOrders=useMemo(()=>orders.filter(w=>w.asset_id===assetId),[orders,assetId])
+  const assetOrders=useMemo(()=>orders.filter(w=>w.asset_id===assetId&&!/^\s*\[(MOC|MOCK|QA)/i.test(w.title)&&(!w.source_observation_id||acceptedIds.includes(w.source_observation_id))),[orders,assetId,acceptedIds])
 
   function docTitle(id:string){const d=documents.find(x=>x.id===id);return d?.title||'Indexed document'}
-  function matchingWorkOrders(q:string){const terms=q.toLowerCase().split(/\s+/).map(x=>x.replace(/[^\p{L}\p{N}_-]/gu,'')).filter(x=>x.length>2);if(!terms.length)return [];return assetOrders.filter(w=>{const text=`${w.title} ${w.problem_description||''} ${w.diagnosis||''} ${w.corrective_action||''}`.toLowerCase();return terms.some(t=>text.includes(t))}).slice(0,6)}
+  function matchingWorkOrders(q:string,eligibleIds=acceptedIds){const terms=q.toLowerCase().split(/\s+/).map(x=>x.replace(/[^\p{L}\p{N}_-]/gu,'')).filter(x=>x.length>2);if(!terms.length)return [];return orders.filter(w=>w.asset_id===assetId&&!/^\s*\[(MOC|MOCK|QA)/i.test(w.title)&&(!w.source_observation_id||eligibleIds.includes(w.source_observation_id))).filter(w=>{const text=`${w.title} ${w.problem_description||''} ${w.diagnosis||''} ${w.corrective_action||''}`.toLowerCase();return terms.some(t=>text.includes(t))}).slice(0,6)}
 
-  function buildSources(found:Chunk[],related:WorkOrder[]){
-    const manual:Source[]=found.slice(0,8).map(c=>({id:`chunk:${c.id}`,kind:'manual',documentId:c.document_id,label:`${docTitle(c.document_id)}${c.page_number?` · page ${c.page_number}`:''}`,content:c.content}))
-    const history:Source[]=related.slice(0,4).map(w=>({id:`wo:${w.id}`,kind:'work_order',label:`RUEL WO #${w.work_order_number} · ${w.title}`,content:[w.problem_description,w.diagnosis&&`Diagnosis: ${w.diagnosis}`,w.corrective_action&&`Action: ${w.corrective_action}`].filter(Boolean).join(' | ')}))
-    return [...manual,...history]
+  function buildSources(found:Chunk[],related:WorkOrder[],accepted:AcceptedObservation[]){
+    const manual:Source[]=found.slice(0,6).map(c=>({id:`chunk:${c.id}`,kind:'manual',documentId:c.document_id,label:`${docTitle(c.document_id)}${c.page_number?` · page ${c.page_number}`:''}`,content:c.content}))
+    const history:Source[]=related.slice(0,2).map(w=>({id:`wo:${w.id}`,kind:'work_order',label:`RUEL WO #${w.work_order_number} · ${w.title}`,content:[w.problem_description,w.diagnosis&&`Diagnosis: ${w.diagnosis}`,w.corrective_action&&`Action: ${w.corrective_action}`].filter(Boolean).join(' | ')}))
+    const reports:Source[]=accepted.slice(0,4).map(o=>({id:'obs:'+o.observation_id,kind:'observation',label:'Supervisor-accepted OBS-'+o.observation_number+' · '+o.accepted_at,content:['Reviewed report: '+o.description,'Supervisor acceptance note: '+o.acceptance_note,o.resolution_notes&&'Reviewed resolution note: '+o.resolution_notes].filter(Boolean).join(' | ')}))
+    return [...manual,...history,...reports]
   }
 
   function extractiveAnswer(sources:Source[]){
@@ -51,6 +55,7 @@ export default function TechnicalAssistantSection({units,userId}:Props){
     const lines=['Evidence found for this asset:']
     manual.forEach(s=>lines.push(`\n[S${sources.indexOf(s)+1}] ${s.content.slice(0,520)}${s.content.length>520?'…':''}`))
     if(history.length){lines.push('\nRUEL maintenance history:');history.forEach(s=>lines.push(`\n[S${sources.indexOf(s)+1}] ${s.content.slice(0,420)}${s.content.length>420?'…':''}`))}
+    const reports=sources.filter(s=>s.kind==='observation');if(reports.length){lines.push('\nSupervisor-accepted observations (reviewed reports, not confirmed diagnoses):');reports.forEach(s=>lines.push(`\n[S${sources.indexOf(s)+1}] ${s.content.slice(0,520)}`))}
     lines.push('\n\nThis is an evidence-first extractive answer. Review the cited source before performing work; follow OEM instructions, RUEL safety requirements and LOTO.')
     return lines.join('')
   }
@@ -71,11 +76,14 @@ export default function TechnicalAssistantSection({units,userId}:Props){
     setSearching(true);setMessage('');setSearched(true);setAnswer('');setAnswerSources([])
     const docIds=assetDocuments.map(d=>d.id);const found=await retrieveChunks(docIds,question.trim())
     setChunks(found)
-    const related=matchingWorkOrders(question);const sources=buildSources(found,related);setAnswerSources(sources)
+    const{data:accepted,error:acceptedError}=await supabase.rpc('search_observation_ai_memory',{p_asset_id:assetId,p_query:question.trim(),p_limit:4});
+    if(acceptedError){setMessage('Unable to verify supervisor acceptance. Please try again.');setSearching(false);return}
+    const{data:currentAcceptance,error:currentError}=await supabase.from('observation_ai_memory').select('observation_id');if(currentError){setMessage('Unable to verify observation history. Please try again.');setSearching(false);return}const currentIds=(currentAcceptance||[]).map((r:any)=>r.observation_id);setAcceptedIds(currentIds);
+    const related=matchingWorkOrders(question,currentIds);let sources=buildSources(found,related,(accepted||[]) as AcceptedObservation[]);setAnswerSources(sources)
     let finalAnswer=extractiveAnswer(sources);let mode='extractive_cited'
     if(sources.length){
-      const {data,error}=await supabase.functions.invoke('technical-assistant-answer',{body:{question:question.trim(),asset:`${selected.asset_code} — ${selected.name}`,sources:sources.map(s=>({id:s.id,label:s.label,content:s.content}))}})
-      if(!error&&data?.answer){finalAnswer=String(data.answer);mode=String(data.mode||'ai_cited')}
+      const {data,error}=await supabase.functions.invoke('technical-assistant-answer',{body:{question:question.trim(),asset_id:assetId,asset:`${selected.asset_code} — ${selected.name}`,sources:sources.map(s=>({id:s.id,label:s.label,content:s.content}))}})
+      if(!error&&data?.answer){finalAnswer=String(data.answer);mode=String(data.mode||'ai_cited');if(Array.isArray(data.sources)){sources=data.sources.map((r:any)=>({...r,kind:r.id.startsWith('obs:')?'observation':r.id.startsWith('wo:')?'work_order':'manual',documentId:r.documentId}));setAnswerSources(sources)}}
     }
     setAnswer(finalAnswer);setAnswerMode(mode)
     await supabase.from('technical_assistant_queries').insert({user_id:userId,asset_id:assetId,question:question.trim(),evidence_count:sources.length,answer_text:finalAnswer,answer_mode:mode,citations:sources.map((s,i)=>({marker:`S${i+1}`,id:s.id,label:s.label,kind:s.kind}))})
@@ -87,7 +95,7 @@ export default function TechnicalAssistantSection({units,userId}:Props){
   function unitName(id:string){return units.find(u=>u.id===id)?.name||'Assigned unit'}
 
   return <div>
-    <div className="hero-row compact-hero"><div><span className="eyebrow">Grounded Technical Intelligence</span><h1>Technical Assistant</h1><p className="muted">Ask in English or Spanish by asset and receive a source-cited answer grounded in controlled manuals, OCR evidence and actual RUEL maintenance history.</p></div></div>
+    <div className="hero-row compact-hero"><div><span className="eyebrow">Grounded Technical Intelligence</span><h1>Technical Assistant</h1><p className="muted">Ask in English or Spanish by asset and receive a source-cited answer grounded in controlled manuals, OCR evidence and actual RUEL maintenance history and supervisor-accepted observations.</p></div></div>
     <div className="warning-box"><strong>Safety boundary</strong><p>This workspace does not authorize repairs, override lockout/tagout, replace qualified-person judgment, or declare equipment safe. Follow OEM procedures and RUEL safety rules.</p></div>
     {message&&<div className="error-box">{message}</div>}
     <form className="data-form assistant-query" onSubmit={search}>
@@ -100,7 +108,7 @@ export default function TechnicalAssistantSection({units,userId}:Props){
     {selected&&<div className="summary-strip"><span><b>{selected.asset_code}</b> {selected.name}</span><span>{unitName(selected.business_unit_id)} · {selected.asset_category.replaceAll('_',' ')} · {[selected.manufacturer,selected.model].filter(Boolean).join(' ')||'technical details pending'}</span></div>}
     {selected&&<div className="assistant-source-grid"><article className="stat-card"><span>Linked / unit documents</span><strong>{assetDocuments.length}</strong><small>Approved records in this asset context</small></article><article className="stat-card"><span>Maintenance history</span><strong>{assetOrders.length}</strong><small>RUEL work orders available for context</small></article><article className="stat-card"><span>Evidence sources</span><strong>{searched?answerSources.length:'—'}</strong><small>Manual/OCR and history sources used</small></article></div>}
     {searched&&<>
-      <section className="profile-panel assistant-answer-panel"><div className="section-heading small-heading"><div><span className="eyebrow">Grounded answer</span><h3>Technical response</h3></div><span className="count-chip">{answerMode==='ai_cited'?'AI + citations':'Evidence extract + citations'}</span></div><div className="assistant-answer-text">{answer||'No answer available.'}</div><div className="assistant-citations"><strong>Sources used</strong>{answerSources.length===0?<p className="muted">No approved sources matched.</p>:answerSources.map((s,i)=><button key={s.id} className="citation-card" onClick={()=>s.documentId&&openDocument(s.documentId)} disabled={!s.documentId}><b>[S{i+1}]</b><span>{s.label}</span><small>{s.kind==='manual'?'Controlled technical document':'RUEL maintenance history'}</small></button>)}</div></section>
+      <section className="profile-panel assistant-answer-panel"><div className="section-heading small-heading"><div><span className="eyebrow">Grounded answer</span><h3>Technical response</h3></div><span className="count-chip">{answerMode==='ai_cited'?'AI + citations':'Evidence extract + citations'}</span></div><div className="assistant-answer-text">{answer||'No answer available.'}</div><div className="assistant-citations"><strong>Sources used</strong>{answerSources.length===0?<p className="muted">No approved sources matched.</p>:answerSources.map((s,i)=><button key={s.id} className="citation-card" onClick={()=>s.documentId&&openDocument(s.documentId)} disabled={!s.documentId}><b>[S{i+1}]</b><span>{s.label}</span><small>{s.kind==='manual'?'Controlled technical document':s.kind==='observation'?'Supervisor-accepted observation':'RUEL maintenance history'}</small></button>)}</div></section>
       <div className="assistant-evidence-grid">
         <section className="profile-panel"><div className="section-heading small-heading"><div><span className="eyebrow">Manual evidence</span><h3>Indexed excerpts</h3></div><span className="count-chip">{chunks.length}</span></div>{chunks.length===0?<div className="empty-table compact">No indexed manual excerpt matched this question.</div>:<div className="profile-list">{chunks.map(c=><button className="profile-list-row evidence-row" key={c.id} onClick={()=>openDocument(c.document_id)}><span><strong>{docTitle(c.document_id)}</strong><small>{c.section_title||'Indexed evidence'}{c.page_number?` · page ${c.page_number}`:''}</small><p>{c.content.slice(0,420)}{c.content.length>420?'…':''}</p></span><b>Source →</b></button>)}</div>}</section>
         <section className="profile-panel"><div className="section-heading small-heading"><div><span className="eyebrow">RUEL history</span><h3>Related work orders</h3></div><span className="count-chip">{matchingOrders.length}</span></div>{matchingOrders.length===0?<div className="empty-table compact">No prior work-order text matched the question.</div>:<div className="timeline">{matchingOrders.map(w=><div className="timeline-item" key={w.id}><span className="timeline-type work_order">WO #{w.work_order_number}</span><div><strong>{w.title}</strong><small>{new Date(w.created_at).toLocaleDateString()} · {w.status.replaceAll('_',' ')}</small>{w.diagnosis&&<p><b>Diagnosis:</b> {w.diagnosis}</p>}{w.corrective_action&&<p><b>Action:</b> {w.corrective_action}</p>}{!w.diagnosis&&!w.corrective_action&&w.problem_description&&<p>{w.problem_description}</p>}</div></div>)}</div>}</section>
