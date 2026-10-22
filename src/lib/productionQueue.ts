@@ -1,0 +1,6 @@
+export type DeliveryDraft={id:string;userId:string;action:string;data:Record<string,unknown>;file?:Blob;name?:string;mime?:string;path?:string;createdAt:string}
+const database='ruel-production-dispatch',store='outbox'
+async function run<T>(mode:IDBTransactionMode,op:(s:IDBObjectStore)=>IDBRequest<T>):Promise<T>{const db=await new Promise<IDBDatabase>((resolve,reject)=>{const r=indexedDB.open(database,1);r.onupgradeneeded=()=>r.result.createObjectStore(store,{keyPath:'id'});r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error)});try{return await new Promise<T>((resolve,reject)=>{const tx=db.transaction(store,mode),r=op(tx.objectStore(store));tx.oncomplete=()=>resolve(r.result);tx.onabort=()=>reject(tx.error||Error('Unable to save this update on your device'));tx.onerror=()=>reject(tx.error);r.onerror=()=>reject(r.error)})}finally{db.close()}}
+export async function queuedDeliveries(userId:string){return(await run<DeliveryDraft[]>('readonly',s=>s.getAll())).filter(x=>x.userId===userId).sort((a,b)=>a.createdAt.localeCompare(b.createdAt))}
+export async function saveDeliveryDraft(d:DeliveryDraft){await run('readwrite',s=>s.put(d))}
+export async function removeDeliveryDraft(id:string){await run('readwrite',s=>s.delete(id))}
