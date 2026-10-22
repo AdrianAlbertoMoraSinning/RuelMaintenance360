@@ -1,5 +1,5 @@
 export type ObservationMessage={id:number;observation_id:string;author_id:string;author_name:string;author_role:'reporter'|'reviewer';body:string;created_at:string;client_message_id:string}
-export type ObservationConversationContext={reported_by:string;reporter_name:string|null;assigned_manager_id:string|null;reviewer_name:string|null;can_send:boolean}
+export type ObservationConversationContext={reported_by:string;reporter_name:string|null;assigned_manager_id:string|null;reviewer_name:string|null;can_send:boolean;participants?:{id:string;name:string|null}[]}
 export type ObservationMessageDraft={text:string;requestId:string|null}
 export function mergeObservationMessages(current:ObservationMessage[],incoming:ObservationMessage[]){const rows=new Map(current.map(m=>[m.id,m]));for(const m of incoming)rows.set(m.id,m);return [...rows.values()].sort((a,b)=>a.id-b.id)}
 export function prepareObservationMessage(text:string,previous:{body:string;id:string}|null,newId:()=>string){const body=text.trim();if(!body||body.length>10000)throw new Error('Write a message of 1 to 10000 characters');return previous?.body===body?previous:{body,id:newId()}}

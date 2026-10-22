@@ -49,6 +49,7 @@ const fieldJs=ts.transpileModule(fieldSource,{compilerOptions:{jsx:ts.JsxEmit.Re
 const fieldMod={};const nativeRequire=createRequire(import.meta.url)
 new Function('require','exports',fieldJs)(name=>{
  if(name.endsWith('.css'))return {}
+ if(name==='./ObservationRouting')return {__esModule:true,default:()=>null,ObservationRecipientSelector:()=>null}
  if(name==='./OperatorObservationForm')return mod
  if(name==='./ObservationEvidence'||name==='./ObservationConversation')return {__esModule:true,default:()=>null}
  if(name==='../lib/supabase'||name==='../lib/observationOfflineStore')return {}

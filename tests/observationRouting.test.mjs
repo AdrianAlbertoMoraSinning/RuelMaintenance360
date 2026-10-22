@@ -1,0 +1,13 @@
+import test from 'node:test'
+import assert from 'node:assert/strict'
+import {readFileSync} from 'node:fs'
+import {createRequire} from 'node:module'
+import ts from 'typescript'
+import React from 'react'
+import {renderToStaticMarkup} from 'react-dom/server'
+const native=createRequire(import.meta.url),source=readFileSync(new URL('../src/modules/ObservationRouting.tsx',import.meta.url),'utf8');const js=ts.transpileModule(source,{compilerOptions:{jsx:ts.JsxEmit.ReactJSX,module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText
+function moduleWithState(first){let n=0;const mod={};const react={...React,useState(initial){return[n++===0?first:typeof initial==='function'?initial():initial,()=>{}]},useEffect(){}};new Function('require','exports',js)(name=>name==='react'?react:name==='../lib/supabase'?{}:name==='../lib/useUpdateBlocker'?{useUpdateBlocker(){}}:name==='./ProductionVoiceField'?{__esModule:true,default:()=>null}:native(name),mod);return mod}
+const options={manager:{id:'adrian',name:'Adrian Mora'},ceo:{id:'guy',name:'Guy Munden'},can_address_ceo:true}
+test('supervisor defaults to Adrian and explicitly selecting Guy displays Adrian as CC',()=>{let mod=moduleWithState(options);let html=renderToStaticMarkup(React.createElement(mod.ObservationRecipientSelector,{unitId:'plant',recipientId:'',onChange(){},disabled:false}));assert.match(html,/Adrian Mora — Direct manager \(default\)/);assert.match(html,/Guy Munden — CEO/);assert.doesNotMatch(html,/<strong>CC:/);mod=moduleWithState(options);html=renderToStaticMarkup(React.createElement(mod.ObservationRecipientSelector,{unitId:'plant',recipientId:'guy',onChange(){},disabled:false}));assert.match(html,/<strong>CC: Adrian Mora<\/strong>/);assert.match(html,/value="guy" selected/)});
+test('operator options retain the direct manager without offering a CEO bypass',()=>{const mod=moduleWithState({...options,can_address_ceo:false});const html=renderToStaticMarkup(React.createElement(mod.ObservationRecipientSelector,{unitId:'plant',recipientId:'',onChange(){},disabled:false}));assert.doesNotMatch(html,/Guy Munden — CEO/);assert.match(html,/Direct manager \(default\)/)});
+test('an addressed report displays the CEO and copied manager without offering duplicate forwarding',()=>{const mod=moduleWithState({recipient_id:'guy',recipient_name:'Guy Munden',manager_id:'adrian',manager_name:'Adrian Mora',can_escalate:false});const html=renderToStaticMarkup(React.createElement(mod.default,{observationId:'obs',onChanged(){}}));assert.match(html,/To: <b>Guy Munden/);assert.match(html,/CC: <b>Adrian Mora/);assert.doesNotMatch(html,/keep manager copied/)});
