@@ -1,0 +1,5 @@
+import {useChatDictation} from '../lib/useChatDictation'
+import {useUpdateBlocker} from '../lib/useUpdateBlocker'
+import {appendTaskDictation} from '../lib/taskDictation'
+import ChatVoiceButton from './ChatVoiceButton'
+export default function ProductionDictationInput({label,value,onChange,scope,maxLength=160,disabled=false}:{label:string;value:string;onChange:(s:string)=>void;scope:string;maxLength?:number;disabled?:boolean}){const voice=useChatDictation(scope,true,disabled,words=>onChange(appendTaskDictation(value,words).replace(/\s+/g,' ').slice(0,maxLength)));useUpdateBlocker(voice.recording||!!value);return <div className="production-dictation-input"><label>{label}<span className="production-dictation-row"><input value={value} onChange={e=>onChange(e.target.value)} maxLength={maxLength} required disabled={disabled}/><ChatVoiceButton recording={voice.recording} disabled={disabled} onClick={voice.toggle}/></span></label>{voice.feedback&&<small role="status">{voice.feedback}</small>}</div>}
