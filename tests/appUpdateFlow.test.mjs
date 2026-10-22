@@ -57,3 +57,8 @@ test('safe idle workspaces update automatically, but a stale page cannot enter a
  h=await harness(storage)
  try{await h.upgrade();await h.advance(30000);assert.equal(h.navigations.length,0);assert.ok(h.values[0]);await h.apply();assert.equal(h.navigations.length,1)}finally{h.close()}
 })
+test('a version already requested in the URL prevents loops even with browser storage blocked',async()=>{
+ const storage={get(){throw Error('Storage blocked')},set(){throw Error('Storage blocked')}}
+ const h=await harness(storage)
+ try{window.location.href+='&_app_version='+newer.version;await h.upgrade();await h.advance(30000);assert.equal(h.navigations.length,0);await h.apply();assert.equal(h.navigations.length,1)}finally{h.close()}
+})

@@ -51,7 +51,8 @@ export default function AppUpdateNotice(){
   const tick=()=>{
    if(!candidate||disposed)return
    const busy=isBlocked();setBlocked(busy)
-   const allowed=!autoFailed&&automaticUpdateAllowed({online:navigator.onLine,visible:document.visibilityState==='visible',blocked:busy,focused:!!document.activeElement?.matches('input,textarea,select,[contenteditable="true"]'),idleMs:Date.now()-lastInteraction,recentReload:recentlyReloaded(savedReload(),candidate.version,Date.now())})
+   const alreadyRequested=new URL(window.location.href).searchParams.get('_app_version')===candidate.version
+   const allowed=!autoFailed&&automaticUpdateAllowed({online:navigator.onLine,visible:document.visibilityState==='visible',blocked:busy,focused:!!document.activeElement?.matches('input,textarea,select,[contenteditable="true"]'),idleMs:Date.now()-lastInteraction,recentReload:alreadyRequested||recentlyReloaded(savedReload(),candidate.version,Date.now())})
    if(!allowed){deadline=null;setCountdown(null);return}
    if(deadline===null)deadline=Date.now()+5000
    const remaining=Math.max(0,Math.ceil((deadline-Date.now())/1000));setCountdown(remaining)
