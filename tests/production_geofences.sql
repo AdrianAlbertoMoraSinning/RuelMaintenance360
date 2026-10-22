@@ -41,6 +41,7 @@ begin
  perform pg_temp.qa_geo(l,56.01,-117,20);
  if(select status from public.production_loads where id=l)<>'ready' then raise exception 'Departure before dwell';end if;
  r:=pg_temp.qa_geo(l,56.01,-117,5);if r->>'event' is distinct from 'departed' then raise exception 'Departure not detected: %',r;end if;
+ r:=public.production_command('event',jsonb_build_object('load_id',l,'event','departed','client_id',gen_random_uuid()));if not coalesce((r->>'already_recorded')::boolean,false) then raise exception 'Delayed manual departure was not reconciled';end if;
  perform pg_temp.qa_geo(l,56.01,-117,5);if(select count(*) from public.production_activity where load_id=l and kind='departed')<>1 then raise exception 'Duplicate departure';end if;
  failed:=false;begin perform public.production_geofence('refresh_zones',jsonb_build_object('actor_id',driver,'load_id',l));exception when raise_exception then failed:=true;end;if not failed then raise exception 'Driver changed delivery zones';end if;
  perform pg_temp.qa_geo_prepare(l,'departed');
@@ -50,6 +51,8 @@ begin
  perform pg_temp.qa_geo(l,56.1,-117,20);
  if(select status from public.production_loads where id=l)<>'departed' then raise exception 'Arrival before dwell';end if;
  r:=pg_temp.qa_geo(l,56.1,-117,5);if r->>'event' is distinct from 'arrived' then raise exception 'Arrival not detected: %',r;end if;
+ r:=public.production_command('event',jsonb_build_object('load_id',l,'event','arrived','client_id',gen_random_uuid()));if not coalesce((r->>'already_recorded')::boolean,false) then raise exception 'Delayed manual arrival was not reconciled';end if;
+ if(select count(*) from public.production_activity where load_id=l and kind='arrived')<>1 then raise exception 'Duplicate manual/GPS arrival';end if;
  perform pg_temp.qa_geo_prepare(l,'arrived');
  perform pg_temp.qa_geo(l,56.11,-117,35);perform pg_temp.qa_geo(l,56.11,-117,20);r:=pg_temp.qa_geo(l,56.11,-117,5);
  if r->>'event' is distinct from 'site_left' then raise exception 'Site exit not detected: %',r;end if;

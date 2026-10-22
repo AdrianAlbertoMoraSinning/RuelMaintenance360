@@ -17,7 +17,7 @@ GPS fixes must be fresh (45 seconds maximum age), no more than 5 seconds in the 
 - Site departure requires an arrived load, a previously observed inside-site location and sustained outside-site readings. It records left_site_at without changing the delivery or order completion status.
 - Completion remains the driver's COMPLETE DELIVERY action. If confirmed before physical departure, site departure may still be recorded for up to 12 hours after completion while the screen remains active.
 
-Only the current ready/active service is eligible for automatic departure/arrival. Future ready loads do not auto-depart. Pending manual offline events pause assistance; automatic samples are never queued for retrospective inference. Driver updates, photos/audio/video and manual event outbox behavior are unchanged.
+Only the current ready/active service is eligible for automatic departure/arrival. Future ready loads do not auto-depart. Pending manual offline events pause assistance; automatic samples are never queued for retrospective inference. A delayed manual departure/arrival update acknowledges an existing GPS milestone, so a stale screen or offline retry cannot duplicate it or leave the outbox stuck. Completion still requires the manual driver action. Driver updates and photos/audio/video are unchanged.
 
 ## Data and visibility
 
