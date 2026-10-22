@@ -1,3 +1,4 @@
+import{useUpdateBlocker}from'../lib/useUpdateBlocker'
 import {settleTaskWorkspace} from '../lib/taskWorkspace'
 import {useEffect,useRef,useState,type FormEvent} from 'react'
 import {supabase} from '../lib/supabase'
@@ -17,6 +18,7 @@ async function allTasks(){const rows:OperationTask[]=[];for(let start=0;;start+=
 export default function TasksSection({units,userId,role,initialTaskId,active=true,onBack,scopedUnitId}:Props){
  const[rows,setRows]=useState<OperationTask[]>([]),[candidates,setCandidates]=useState<any[]>([]),[assets,setAssets]=useState<any[]>([]),[plans,setPlans]=useState<any[]>([]),[view,setView]=useState<TaskView>('all'),[loading,setLoading]=useState(true),[busy,setBusy]=useState(false),[message,setMessage]=useState(''),[showCreate,setShowCreate]=useState(false),[form,setForm]=useState(blank),[selected,setSelected]=useState<OperationTask|null>(null),[checks,setChecks]=useState<Check[]>([]),[activities,setActivities]=useState<Activity[]>([]),[note,setNote]=useState(''),[progress,setProgress]=useState('0'),[state,setState]=useState('in_progress'),[unitFilter,setUnitFilter]=useState(scopedUnitId||'all');const[linkParent,setLinkParent]=useState(''),[recording,setRecording]=useState(false);const[voiceLanguage,setVoiceLanguage]=useState('en-CA');const speech=useRef<ReturnType<typeof createTaskDictation>|null>(null);if(!speech.current)speech.current=createTaskDictation(setRecording,setMessage);
  useEffect(()=>{const stop=()=>{speech.current?.abort()};window.addEventListener('ruel:workspace-change',stop);return()=>window.removeEventListener('ruel:workspace-change',stop)},[]);
+useUpdateBlocker(busy||recording||showCreate||!!selected&&!!note.trim())
 const loadingRef=useRef(false),openedInitial=useRef('');const[refreshNotice,setRefreshNotice]=useState('')
  const[assignmentLoading,setAssignmentLoading]=useState(true),[assignmentError,setAssignmentError]=useState('');const createForm=useRef<HTMLFormElement>(null);const canAssign=candidates.length>0||['super_admin','corporate_manager','unit_supervisor'].includes(role)
  useEffect(()=>{if(showCreate){const frame=window.requestAnimationFrame(()=>{createForm.current?.scrollIntoView({behavior:'smooth',block:'start'});createForm.current?.querySelector<HTMLInputElement>('input')?.focus({preventScroll:true})});return()=>window.cancelAnimationFrame(frame)}},[showCreate])

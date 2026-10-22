@@ -1,0 +1,10 @@
+import{useState}from'react'
+import Brand from '../components/Brand'
+import{parseAppVersion}from'../lib/appUpdate'
+export default function AboutSection(){
+ const meta=(name:string)=>document.querySelector<HTMLMetaElement>(`meta[name="${name}"]`)?.content||''
+ const release=meta('ruel-release'),build=meta('ruel-build'),builtAt=meta('ruel-built-at')
+ const[checking,setChecking]=useState(false),[status,setStatus]=useState('')
+ async function check(){setChecking(true);setStatus('');const controller=new AbortController(),timer=window.setTimeout(()=>controller.abort(),10000);try{const response=await fetch('/app-version.json',{cache:'no-store',signal:controller.signal});if(!response.ok)throw Error();const version=parseAppVersion(await response.json());if(!version)throw Error();setStatus(version.version===build?'You are using the latest version.':'A newer version is available. Save your work, then use Update now.');window.dispatchEvent(new Event('ruel:check-app-update'))}catch{setStatus('Unable to check for updates. Check your connection and try again.')}finally{clearTimeout(timer);setChecking(false)}}
+ return <div><div className="hero-row compact-hero"><div><span className="eyebrow">Application information</span><h1>About</h1><p className="muted">The version currently open on this device.</p></div></div><article className="about-app-card"><Brand label="MAINTENANCE 360"/><h2>RUEL Maintenance 360</h2><p>Maintenance, field observations and team follow-up.</p><dl><div><dt>Version</dt><dd>{release||'Development'}</dd></div><div><dt>Build</dt><dd><code>{build||'Local workspace'}</code></dd></div>{builtAt&&<div><dt>Built</dt><dd>{new Intl.DateTimeFormat('en-CA',{dateStyle:'medium',timeStyle:'short',timeZone:'America/Edmonton'}).format(new Date(builtAt))} · Alberta</dd></div>}</dl><button type="button" className="secondary-outline" disabled={checking} onClick={()=>void check()}>{checking?'Checking…':'Check for updates'}</button>{status&&<p role="status">{status}</p>}<p className="field-help">Updates keep your account, permissions and saved records. No new invitation or app installation is required.</p></article></div>
+}

@@ -1,3 +1,4 @@
+import{useUpdateBlocker}from'../lib/useUpdateBlocker'
 import {ChangeEvent,FormEvent,useEffect,useMemo,useRef,useState} from'react'
 import{ supabase }from'../lib/supabase'
 import type{BusinessUnit}from'./AssetsSection'
@@ -53,6 +54,7 @@ export default function ObservationsSection({units,userId,role,initialAssetId,co
   recognition.onresult=(e:any)=>{setForm(f=>({...f,description:(f.description+' '+Array.from(e.results as any).map((x:any)=>x[0].transcript).join(' ')).trim()}));setVoiceFeedback('Voice added as text below. Check the words before sending.')};
   try{setRecording(true);recognition.start()}catch{setRecording(false);setVoiceFeedback('Unable to start voice input. Use your keyboard microphone or type a short description.')}
  }
+ useUpdateBlocker(saving||recording||preparingPhotos||syncing||photos.length>0||!!form.description.trim()||!!triageNote.trim())
  const corporate=['super_admin','corporate_manager'].includes(role)
  const safetyUnits=useMemo(()=>new Set(safetyResp.filter(x=>x.user_id===userId&&x.active).map(x=>x.business_unit_id)),[safetyResp,userId])
  function assetFor(id:string|null){return assets.find(a=>a.id===id)} function personName(id:string|null){const p=people.find(x=>x.id===id);return p?.full_name||p?.email||'—'} function unitName(id:string){return units.find(u=>u.id===id)?.name||'Business unit'}

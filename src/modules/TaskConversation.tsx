@@ -1,3 +1,4 @@
+import{useUpdateBlocker}from'../lib/useUpdateBlocker'
 import {useEffect,useRef,useState,type FormEvent} from 'react'
 import {supabase} from '../lib/supabase'
 import {mergeTaskMessages,prepareTaskMessage,readTaskMessageDraft,saveTaskMessageDraft,type TaskMessage} from '../lib/taskConversation'
@@ -16,6 +17,7 @@ export default function TaskConversation({task,userId,active=true,onPosted}:Prop
  const box=useRef<HTMLDivElement>(null),latest=useRef(0),oldest=useRef(0),epoch=useRef(0),fetching=useRef(false),sendingNow=useRef(false),enabled=useRef(active),initialized=useRef(false)
  const canSend=task.assigned_by===userId||task.assigned_to===userId
  const voice=useChatDictation(`${userId}:task:${task.id}`,active,sending||!canSend,words=>{setText(v=>appendTaskDictation(v,words));setConfirmation('')})
+ useUpdateBlocker(sending||voice.recording||!!text.trim())
  enabled.current=active
  useEffect(()=>{saveTaskMessageDraft(cache(),userId,task.id,{text,requestId:request.current?.body===text.trim()?request.current.id:null})},[text,userId,task.id])
  function bottom(){window.requestAnimationFrame(()=>{if(box.current)box.current.scrollTop=box.current.scrollHeight})}

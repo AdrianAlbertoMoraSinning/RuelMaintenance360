@@ -1,6 +1,7 @@
 import {readForwardedInvitation} from './phoneOnboarding'
 import { createClient } from '@supabase/supabase-js'
 import { readAuthReturn } from './authFlow'
+import { updateAwareFetch } from './appUpdate'
 
 // GoTrue consumes the URL fragment during initialization. Capture intent first.
 export const initialAuthReturn = readAuthReturn(window.location.search, window.location.hash)
@@ -16,6 +17,7 @@ const supabasePublishableKey =
   import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_VgOf2QDrKRHMdlnxLBb__A_4_pNpSXa'
 
 export const supabase = createClient(supabaseUrl, supabasePublishableKey, {
+  global: {fetch:updateAwareFetch},
   auth: {
     persistSession: true,
     autoRefreshToken: true,

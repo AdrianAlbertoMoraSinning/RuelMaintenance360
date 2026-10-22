@@ -16,7 +16,7 @@ function openDb():Promise<IDBDatabase>{
 
 async function withStore<T>(mode:IDBTransactionMode,fn:(store:IDBObjectStore)=>IDBRequest<T>):Promise<T>{
   const db=await openDb()
-  try{return await new Promise<T>((resolve,reject)=>{const tx=db.transaction(STORE,mode);const req=fn(tx.objectStore(STORE));req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error||new Error('IndexedDB operation failed'));tx.onerror=()=>reject(tx.error||new Error('IndexedDB transaction failed'))})}finally{db.close()}
+  try{return await new Promise<T>((resolve,reject)=>{const tx=db.transaction(STORE,mode);const req=fn(tx.objectStore(STORE));tx.oncomplete=()=>resolve(req.result);req.onerror=()=>reject(req.error||new Error('IndexedDB operation failed'));tx.onerror=()=>reject(tx.error||new Error('IndexedDB transaction failed'));tx.onabort=()=>reject(tx.error||new Error('IndexedDB transaction aborted'))})}finally{db.close()}
 }
 
 export async function listObservationDrafts():Promise<OfflineObservationDraft[]>{

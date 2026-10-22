@@ -1,3 +1,4 @@
+import{useUpdateBlocker}from'../lib/useUpdateBlocker'
 import {useEffect,useRef,useState,type FormEvent} from 'react'
 import {supabase} from '../lib/supabase'
 import {mergeObservationMessages,prepareObservationMessage,readObservationMessageDraft,saveObservationMessageDraft,type ObservationMessage} from '../lib/observationConversation'
@@ -16,6 +17,7 @@ export default function ObservationConversation({observationId,userId,active=tru
  const box=useRef<HTMLDivElement>(null),latest=useRef(0),oldest=useRef(0),epoch=useRef(0),fetching=useRef(false),sendingNow=useRef(false),enabled=useRef(active),initialized=useRef(false)
  const[context,setContext]=useState<ObservationConversationContext|null>(null);const canSend=!!context?.can_send;const peer=context?.reported_by===userId?(context.reviewer_name||'your assigned reviewer'):(context?.reporter_name||'the reporter')
  const voice=useChatDictation(`${userId}:observation:${observationId}`,active,sending||!canSend,words=>{setText(v=>appendTaskDictation(v,words));setConfirmation('')})
+ useUpdateBlocker(sending||voice.recording||!!text.trim())
  enabled.current=active
  useEffect(()=>{saveObservationMessageDraft(cache(),userId,observationId,{text,requestId:request.current?.body===text.trim()?request.current.id:null})},[text,userId,observationId])
  function bottom(){window.requestAnimationFrame(()=>{if(box.current)box.current.scrollTop=box.current.scrollHeight})}
