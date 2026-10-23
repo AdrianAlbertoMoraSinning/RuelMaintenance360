@@ -51,7 +51,7 @@ new Function('require','exports',fieldJs)(name=>{
  if(name.endsWith('.css'))return {}
  if(name==='./ObservationRouting')return {__esModule:true,default:()=>null,ObservationRecipientSelector:()=>null}
  if(name==='./OperatorObservationForm')return mod
- if(name==='./ObservationEvidence'||name==='./ObservationConversation')return {__esModule:true,default:()=>null}
+ if(name==='./ObservationEvidence'||name==='./ObservationConversation'||name==='./RecordSignatures')return {__esModule:true,default:()=>null}
  if(name==='../lib/supabase'||name==='../lib/observationOfflineStore')return {}
  if(name==='../lib/useUpdateBlocker')return {useUpdateBlocker:()=>{}}
  return nativeRequire(name)
