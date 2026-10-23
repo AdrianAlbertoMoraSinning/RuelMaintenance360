@@ -20,8 +20,8 @@ export default function EntryActivityToast({userId,onNavigate,onAlerts}:Props){
     // Message notifications belong to the actual recipient; leadership observers
     // may read a chat but must not receive someone else's unread-message reminder.
     chats:()=>supabase.from('notifications').select('observation_id',{count:'exact'}).eq('user_id',userId).is('read_at',null).eq('notification_type','observation_message').order('created_at',{ascending:false}).limit(1),
-    // Task and observation chat notifications are represented above by their read cursors.
-    alerts:()=>supabase.from('notifications').select('id',{count:'exact'}).eq('user_id',userId).is('read_at',null).is('task_id',null).neq('notification_type','observation_message').limit(1)
+    // Chats/progress use their cursors. Signature notices do not mutate those cursors.
+    alerts:()=>supabase.from('notifications').select('id',{count:'exact'}).eq('user_id',userId).is('read_at',null).or('task_id.is.null,dedupe_key.like.signature:*').neq('notification_type','observation_message').limit(1)
    })
    if(!disposed&&request===version&&visibleNow()&&hasEntryActivity(next))setSummary(next)
   }
