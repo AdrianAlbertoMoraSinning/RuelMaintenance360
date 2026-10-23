@@ -13,7 +13,7 @@ begin
  site:=(public.production_command('site',jsonb_build_object('business_unit_id',unit,'customer_id',cust,'name','QA logistics site','address','QA no real delivery'))->>'id')::uuid;
  prod:=(public.production_command('product',jsonb_build_object('business_unit_id',unit,'name','QA mix','unit','m³','kind','product'))->>'id')::uuid;
  plan:=jsonb_build_object('trucks',2,'notes','INTERNAL logistics note','slots',jsonb_build_array(
- jsonb_build_object('id',s1,'quantity',7,'departure_at',now()+interval '1 day','arrival_at',now()+interval '25 hours'),
+ jsonb_build_object('id',s1,'driver_id',driver,'driver_name','SPOOFED NAME','quantity',7,'departure_at',now()+interval '1 day','arrival_at',now()+interval '25 hours'),
  jsonb_build_object('id',s2,'quantity',7,'departure_at',now()+interval '24 hours 30 minutes','arrival_at',now()+interval '25 hours 30 minutes'),
  jsonb_build_object('id',s3,'quantity',6,'departure_at',now()+interval '25 hours','arrival_at',now()+interval '26 hours')));
  payload:=jsonb_build_object('request_id',gen_random_uuid(),'business_unit_id',unit,'customer_id',cust,'site_id',site,'product_id',prod,'quantity',20,'due_at',now()+interval '25 hours','dispatch_plan',plan);
@@ -22,6 +22,9 @@ begin
  bad:=false;begin perform public.production_command('order',(payload-'customer_id'-'site_id')||jsonb_build_object('request_id',gen_random_uuid(),'new_customer',jsonb_build_object('name','[QA rollback] Invalid-plan inline customer'),'new_site',jsonb_build_object('name','QA invalid-plan site','address','QA'),'dispatch_plan',jsonb_set(plan,'{slots,2,quantity}','5')));exception when raise_exception then bad:=true;end;if not bad then raise exception 'Invalid plan committed new order';end if;
  if exists(select 1 from public.production_customers where business_unit_id=unit and name='[QA rollback] Invalid-plan inline customer') then raise exception 'Invalid plan left an inline customer behind';end if;
  if exists(select 1 from public.production_loads where order_id=ord) then raise exception 'Logistics fabricated an assigned/produced delivery';end if;
+ if (select dispatch_plan->'slots'->0->>'driver_id' from public.production_orders where id=ord) is distinct from driver::text or (select dispatch_plan->'slots'->0->>'driver_name' from public.production_orders where id=ord)='SPOOFED NAME' then raise exception 'Planned driver was dropped or spoofed';end if;
+ bad:=false;begin perform public.production_dispatch_plan(ord,1,jsonb_set(plan,'{slots,1,driver_id}',to_jsonb(actor)),actor,gen_random_uuid());exception when raise_exception then bad:=true;end;if not bad then raise exception 'Unenrolled planned driver accepted';end if;
+ bad:=false;begin perform public.production_command('schedule',jsonb_build_object('order_id',ord,'fleet_unit_id',fleet,'driver_id',actor,'truck_id',truck,'quantity',7,'dispatch_slot_id',s1,'logistics_version',1));exception when raise_exception then bad:=true;end;if not bad then raise exception 'Assignment ignored planned driver';end if;
  if (select dispatch_plan->>'trucks' from public.production_orders where id=ord)<>'2' then raise exception 'Truck count missing';end if;
  bad:=false;begin perform public.production_dispatch_plan(ord,0,plan,actor,gen_random_uuid());exception when raise_exception then bad:=true;end;if not bad then raise exception 'Stale plan accepted';end if;
  bad:=false;begin perform public.production_dispatch_plan(ord,1,jsonb_set(plan,'{slots,2,quantity}','5'),actor,gen_random_uuid());exception when raise_exception then bad:=true;end;if not bad then raise exception 'Plan total mismatch accepted';end if;
@@ -32,6 +35,7 @@ begin
  loadid:=(public.production_command('schedule',jsonb_build_object('order_id',ord,'fleet_unit_id',fleet,'driver_id',driver,'truck_id',truck,'quantity',7,'dispatch_slot_id',s1,'logistics_version',1))->>'id')::uuid;
  if (select planned_departure_at from public.production_loads where id=loadid) is distinct from (plan->'slots'->0->>'departure_at')::timestamptz or (select departed_at from public.production_loads where id=loadid) is not null then raise exception 'Assignment lost plan or inferred actual departure';end if;
  bad:=false;begin perform public.production_command('schedule',jsonb_build_object('order_id',ord,'fleet_unit_id',fleet,'driver_id',driver,'truck_id',truck,'quantity',7,'dispatch_slot_id',s1,'logistics_version',1));exception when raise_exception then bad:=true;end;if not bad then raise exception 'Trip assigned twice';end if;
+ bad:=false;begin perform public.production_dispatch_plan(ord,1,jsonb_set(plan,'{slots,0,driver_id}',to_jsonb(actor)),actor,gen_random_uuid());exception when raise_exception then bad:=true;end;if not bad then raise exception 'Assigned driver changed through plan';end if;
  key:=gen_random_uuid();perform public.production_dispatch_plan(ord,1,plan,actor,key);perform public.production_dispatch_plan(ord,1,plan,actor,key);
  if (select logistics_version from public.production_orders where id=ord)<>2 then raise exception 'Plan retry incremented revision twice';end if;
  bad:=false;begin perform public.production_dispatch_plan(ord,1,jsonb_set(plan,'{notes}','"Changed retry"'),actor,key);exception when raise_exception then bad:=true;end;if not bad then raise exception 'Changed retry payload accepted';end if;

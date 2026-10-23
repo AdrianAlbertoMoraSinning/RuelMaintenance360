@@ -147,8 +147,29 @@ Deno.serve(async (req)=>{
 
     const targetUserId=String(body.user_id||'')
     if(!targetUserId) return new Response(JSON.stringify({error:'user_id is required'}),{status:400,headers:cors})
-    const {data:target}=await admin.from('profiles').select('id,role,active').eq('id',targetUserId).single()
+    const {data:target}=await admin.from('profiles').select('id,role,active,email').eq('id',targetUserId).single()
     if(!target) return new Response(JSON.stringify({error:'Target user not found'}),{status:404,headers:cors})
+
+    if(action==='set_driver_email'){
+      if(target.role!=='driver'||!target.active)throw new Error('An active Driver profile is required')
+      const email=String(body.email||'').trim().toLowerCase()
+      if(!/^\S+@\S+\.\S+$/.test(email)||email.endsWith('.invalid'))throw new Error('A valid personal sign-in email is required')
+      const {data:identity,error:identityError}=await admin.auth.admin.getUserById(targetUserId)
+      if(identityError||!identity.user)throw new Error('Driver account not found')
+      if(!identity.user.app_metadata?.driver_pending_activation&&!(identity.user.email?.toLowerCase()===email&&!target.email))throw new Error('This driver already has sign-in access. Use the normal recovery process.')
+      if(identity.user.email&&identity.user.email.toLowerCase()!==email)throw new Error('This pending account already has a different email. Review before retrying.')
+      // Attach contact first; a failed profile write can retry the same account/email.
+      const {error:emailError}=await admin.auth.admin.updateUserById(targetUserId,{email,email_confirm:true})
+      if(emailError)throw emailError
+      // No password is created and no invitation is sent by this action.
+      const {error:enableError}=await admin.auth.admin.updateUserById(targetUserId,{ban_duration:'none',app_metadata:{...identity.user.app_metadata,driver_pending_activation:false}})
+      if(enableError)throw enableError
+      const {error:profileError}=await admin.from('profiles').update({email}).eq('id',targetUserId)
+      if(profileError)throw profileError
+      const {error:auditError}=await admin.from('admin_security_events').insert({actor_user_id:user.id,target_user_id:targetUserId,action:'driver_email_registered'})
+      if(auditError)throw auditError
+      return new Response(JSON.stringify({ok:true,message:'Email registered. Use Resend app invitation to prepare personal access.'}),{headers:cors})
+    }
 
     if(action==='set_password'){
       const password=String(body.password||'')

@@ -24,3 +24,6 @@ Plan creation commits with the order and any inline customer/jobsite creation. I
 
 ## Validation
 Model and component tests cover distribution, rounding, invalid dates and sums, Alberta/DST handling, editor fields, assignment controls and planned-versus-actual display. Rollback SQL covers atomic order creation, retry integrity, roles, totals, duplicate slots/assignments, revision conflicts, preservation of started trips, legacy assignment adoption, audit history, private tracking and separation from real delivery events. Existing receipts, geofence and order-chat rollback tests pass. Security advisors show no additional findings. Physical phone testing remains a pilot check.
+
+## Planned driver · 0.3.8
+Each trip can select an active enrolled Mobile Concrete Fleet driver during order creation or editing. The server validates identity and records the canonical name. Plan delivery preselects and retains that driver; assigning the vehicle creates the actual delivery and its notification. To change an unassigned driver, edit logistics first. Assigned/started trips retain their delivery driver. Blank driver selections remain compatible with existing orders.
