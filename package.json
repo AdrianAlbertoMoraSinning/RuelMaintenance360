@@ -1,7 +1,7 @@
 {
   "name": "ruel-maintenance-360",
   "private": true,
-  "version": "0.3.9",
+  "version": "0.3.10",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -14,7 +14,7 @@
     "test:auth": "node --experimental-strip-types --test tests/authFlow.test.mjs tests/phoneOnboarding.test.mjs tests/operatorIdentity.test.mjs tests/operatorRedemption.test.mjs tests/invitationRecipients.test.mjs tests/operatorInvitationResend.test.mjs tests/avatarPhoto.test.mjs tests/driverOnboarding.test.mjs",
     "test:operator": "node --experimental-strip-types --test tests/operatorCapture.test.mjs tests/observationConversation.test.mjs tests/observationRouting.test.mjs tests/recordSignatures.test.mjs",
     "test:tasks": "node --experimental-strip-types --test tests/taskModel.test.mjs tests/taskConversation.test.mjs tests/taskDictation.test.mjs tests/taskRefresh.test.mjs tests/unitActivity.test.mjs tests/unitNavigation.test.mjs tests/taskWorkspace.test.mjs tests/entryActivity.test.mjs tests/appUpdate.test.mjs tests/appUpdateFlow.test.mjs tests/offlineCommit.test.mjs",
-    "test:production": "node --experimental-strip-types --test tests/production.test.mjs tests/productionUI.test.mjs tests/productionOutbox.test.mjs tests/deliveryGeofence.test.mjs tests/deliveryReceipt.test.mjs tests/orderConversation.test.mjs tests/dispatchLogistics.test.mjs tests/dispatchConnectionAndMap.test.mjs"
+    "test:production": "node --experimental-strip-types --test tests/production.test.mjs tests/productionUI.test.mjs tests/productionOutbox.test.mjs tests/deliveryGeofence.test.mjs tests/deliveryReceipt.test.mjs tests/orderConversation.test.mjs tests/dispatchLogistics.test.mjs tests/dispatchConnectionAndMap.test.mjs tests/manualDelivery.test.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.58.0",
