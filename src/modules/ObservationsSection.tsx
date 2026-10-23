@@ -26,7 +26,7 @@ type LocalPhoto={id:string;name:string;type:string;blob:Blob;caption:string;url:
 const blank={recipient_id:'',business_unit_id:'',asset_id:'',observation_type:'equipment',description:'',immediate_concern:'normal'}
 
 export default function ObservationsSection({units,userId,role,initialAssetId,compact=false,active=true,initialObservationId,initialObservationRequest=0,onBack,scopedUnitId}:Props){
- const operator=role==='operator';const simple=operator||compact;const[chatUpdates,setChatUpdates]=useState<Set<string>>(new Set());const openedObservation=useRef('');
+ const operator=role==='operator'||role==='driver';const simple=operator||compact;const[chatUpdates,setChatUpdates]=useState<Set<string>>(new Set());const openedObservation=useRef('');
  async function loadChatUpdates(){const{data,error}=await supabase.from('field_observation_chat_updates').select('observation_id').eq('has_updates',true);if(!error)setChatUpdates(new Set((data||[]).map(x=>x.observation_id)))}
  useEffect(()=>{if(!active)return;void loadChatUpdates();const refresh=()=>{if(document.visibilityState==='visible')void loadChatUpdates()};const timer=window.setInterval(refresh,10000);window.addEventListener('focus',refresh);return()=>{window.clearInterval(timer);window.removeEventListener('focus',refresh)}},[active,userId])
  const[operatorTab,setOperatorTab]=useState<'capture'|'history'>('capture');

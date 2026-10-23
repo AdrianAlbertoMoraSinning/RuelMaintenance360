@@ -1,0 +1,639 @@
+{
+  "source_file": "Ruel_Concrete_Master_Summary_Prices.xlsm",
+  "library_file_id": "libfile_ae1831d18c04819187be3eba6da16b7e",
+  "source_sheet": "MASTER SUMMARY",
+  "references": [
+    {
+      "reference_code": "05CHSEFILL",
+      "description": "0.5MPa Fillcrete 6-9%",
+      "summary_description": "0.5MPa Fillcrete 6-9%",
+      "status": "Active",
+      "unit": "m³",
+      "source_reference": "Ruel_Concrete_Master_Summary_Prices.xlsm · MASTER SUMMARY row 2 · 05CHSEFILL!B4:B6"
+    },
+    {
+      "reference_code": "10D1-AFIV",
+      "description": "10 MPA @28 DAY HSB 3-7% AIR",
+      "summary_description": "10 MPA @28 DAY HSB 3-7% AIR",
+      "status": "Active",
+      "unit": "m³",
+      "source_reference": "Ruel_Concrete_Master_Summary_Prices.xlsm · MASTER SUMMARY row 3 · 10D1-AFIV!B4:B6"
+    },
+    {
+      "reference_code": "10PFC",
+      "description": "10MPA Pumpable Fillcrete 4-9%",
+      "summary_description": "10MPA Pumpable Fillcrete 4-9%",
+      "status": "Active",
+      "unit": "m³",
+      "source_reference": "Ruel_Concrete_Master_Summary_Prices.xlsm · MASTER SUMMARY row 4 · 10PFC!B4:B6"
+    },
+    {
+      "reference_code": "15C1FP",
+      "description": "15MPa Curb",
+      "summary_description": "15MPa Curb",
+      "status": "Active",
+      "unit": "m³",
+      "source_reference": "Ruel_Concrete_Master_Summary_Prices.xlsm · MASTER SUMMARY row 5 · 15C1FP!B4:B6"
+    },
+    {
+      "reference_code": "20C5",
+      "description": "20MPa @ 28 Days, HS, 4-7%, 20mm",
+      "summary_description": "20MPa @ 28 Days, HS, 4-7%, 20mm",
+      "status": "Active",
+      "unit": "m³",
+      "source_reference": "Ruel_Concrete_Master_Summary_Prices.xlsm · MASTER SUMMARY row 6 · 20C5!B4:B6"
+    },
+    {
+      "reference_code": "20F1GU12N",
+      "description": "Mez Deck, Masonary, 12mm Rock",
+      "summary_description": "Mez Deck, Masonary, 12mm Rock",
+      "status": "Active",
+      "unit": "m³",
+      "source_reference": "Ruel_Concrete_Master_Summary_Prices.xlsm · MASTER SUMMARY row 7 · 20F1GU12N!B4:B6"
+    },
+    {
+      "reference_code": "20NA",
+      "description": "20Mpa Non air",
+      "summary_description": "20Mpa Non air",
+      "status": "Active",
+      "unit": "m³",
+      "source_reference": "Ruel_Concrete_Master_Summary_Prices.xlsm · MASTER SUMMARY row 8 · 20NA!B4:B6"
+    },
+    {
+      "reference_code": "2514",
+      "description": "25MPA ICF 4-7%",
+      "summary_description": "25MPA ICF 4-7%",
+      "status": "Active",
+      "unit": "m³",
+      "source_reference": "Ruel_Concrete_Master_Summary_Prices.xlsm · MASTER SUMMARY row 9 · 2514!B4:B6"
+    },
+    {
+      "reference_code": "25C1-SCC",
+      "description": "25 MPa, SCC, 5-8%, GU",
+      "summary_description": "25 MPa, SCC, 5-8%, GU",
+      "status": "Active",
+      "unit": "m³",
+      "source_reference": "Ruel_Concrete_Master_Summary_Prices.xlsm · MASTER SUMMARY row 10 · 25C1-SCC!B4:B6"
+    },
+    {
+      "reference_code": "25C4",
+      "description": "25MPA 4-7%",
+      "summary_description": "25MPA 4-7%",
+      "status": "Active",
+      "unit": "m³",
+      "source_reference": "Ruel_Concrete_Master_Summary_Prices.xlsm · MASTER SUMMARY row 11 · 25C4!B4:B6"
+    },
+    {
+      "reference_code": "25F1",
+      "description": "25 MPa, Non air, 20mm, GU",
+      "summary_description": "25 MPa, Non air, 20mm, GU",
+      "status": "Active",
+      "unit": "m³",
+      "source_reference": "Ruel_Concrete_Master_Summary_Prices.xlsm · MASTER SUMMARY row 12 · 25F1!B4:B6"
+    },
+    {
+      "reference_code": "25F1-10",
+      "description": "25MPA 10mm, 200mm",
+      "summary_description": "25MPA 10mm, 200mm",
+      "status": "Active",
+      "unit": "m³",
+      "source_reference": "Ruel_Concrete_Master_Summary_Prices.xlsm · MASTER SUMMARY row 13 · 25F1-10!B4:B6"
+    },
+    {
+      "reference_code": "25F1-14",
+      "description": "25MPA 14mm Non Air",
+      "summary_description": "25MPA 14mm Non Air",
+      "status": "Active",
+      "unit": "m³",
+      "source_reference": "Ruel_Concrete_Master_Summary_Prices.xlsm · MASTER SUMMARY row 14 · 25F1-14!B4:B6"
+    },
+    {
+      "reference_code": "25F2GU14A",
+      "description": "25 MPA 14mm 4-7%",
+      "summary_description": "25 MPA 14mm 4-7%",
+      "status": "Active",
+      "unit": "m³",
+      "source_reference": "Ruel_Concrete_Master_Summary_Prices.xlsm · MASTER SUMMARY row 15 · 25F2GU14A!B4:B6"
+    },
+    {
+      "reference_code": "25F2HS20A",
+      "description": "25mpa, 4-7%",
+      "summary_description": "25mpa, 4-7%",
+      "status": "Active",
+      "unit": "m³",
+      "source_reference": "Ruel_Concrete_Master_Summary_Prices.xlsm · MASTER SUMMARY row 16 · 25F2HS20A!B4:B6"
+    },
+    {
+      "reference_code": "3020EXT",
+      "description": "30MPa Exterior Slab 5-8%, 100mm",
+      "summary_description": "30MPa Exterior Slab 5-8%, 100mm",
+      "status": "Active",
+      "unit": "m³",
+      "source_reference": "Ruel_Concrete_Master_Summary_Prices.xlsm · MASTER SUMMARY row 17 · 3020EXT!B4:B6"
+    },
+    {
+      "reference_code": "30Block",
+      "description": "30MPa Block Mix",
+      "summary_description": "30MPa Block Mix",
+      "status": "Active",
+      "unit": "m³",
+      "source_reference": "Ruel_Concrete_Master_Summary_Prices.xlsm · MASTER SUMMARY row 18 · 30Block!B4:B6"
+    },
+    {
+      "reference_code": "30C1",
+      "description": "30MPA GU 4-7%",
+      "summary_description": "30MPA GU 4-7%",
+      "status": "Active",
+      "unit": "m³",
+      "source_reference": "Ruel_Concrete_Master_Summary_Prices.xlsm · MASTER SUMMARY row 19 · 30C1!B4:B6"
+    },
+    {
+      "reference_code": "30C1-14",
+      "description": "30MPa, 14mm, 5-8%",
+      "summary_description": "30MPa, 14mm, 5-8%",
+      "status": "Active",
+      "unit": "m³",
+      "source_reference": "Ruel_Concrete_Master_Summary_Prices.xlsm · MASTER SUMMARY row 20 · 30C1-14!B4:B6"
+    },
+    {
+      "reference_code": "30C1-14mm",
+      "description": "30MPA 14mm ICF 4-7%",
+      "summary_description": "30MPA 14mm ICF 4-7%",
+      "status": "Active",
+      "unit": "m³",
+      "source_reference": "Ruel_Concrete_Master_Summary_Prices.xlsm · MASTER SUMMARY row 21 · 30C1-14mm!B4:B6"
+    },
+    {
+      "reference_code": "30C1-ATP",
+      "description": "30 MPA @ 28 DAYS, HSe, 5-8%, 20MM - ATP",
+      "summary_description": "30 MPA @ 28 DAYS, HSe, 5-8%, 20MM - ATP",
+      "status": "Active",
+      "unit": "m³",
+      "source_reference": "Ruel_Concrete_Master_Summary_Prices.xlsm · MASTER SUMMARY row 22 · 30C1-ATP!B4:B6"
+    },
+    {
+      "reference_code": "30C1HE20A",
+      "description": "30MPa High Early 4-7%",
+      "summary_description": "30MPa High Early 4-7%",
+      "status": "Active",
+      "unit": "m³",
+      "source_reference": "Ruel_Concrete_Master_Summary_Prices.xlsm · MASTER SUMMARY row 23 · 30C1HE20A!B4:B6"
+    },
+    {
+      "reference_code": "30C5",
+      "description": "30 MPA, SR3, 5-8%, 20mm",
+      "summary_description": "30 MPA, SR3, 5-8%, 20mm",
+      "status": "Active",
+      "unit": "m³",
+      "source_reference": "Ruel_Concrete_Master_Summary_Prices.xlsm · MASTER SUMMARY row 24 · 30C5!B4:B6"
+    },
+    {
+      "reference_code": "30D1",
+      "description": "30 MPa, Low Air Slab, GU",
+      "summary_description": "30 MPa, Low Air Slab, GU",
+      "status": "Active",
+      "unit": "m³",
+      "source_reference": "Ruel_Concrete_Master_Summary_Prices.xlsm · MASTER SUMMARY row 25 · 30D1!B4:B6"
+    },
+    {
+      "reference_code": "30D7",
+      "description": "30Mpa,Type 10, 5-8%, 28day",
+      "summary_description": "30Mpa,Type 10, 5-8%, 28day",
+      "status": "Active",
+      "unit": "m³",
+      "source_reference": "Ruel_Concrete_Master_Summary_Prices.xlsm · MASTER SUMMARY row 26 · 30D7!B4:B6"
+    },
+    {
+      "reference_code": "30F1",
+      "description": "30 MPa, No air, GU",
+      "summary_description": "30 MPa, No air, GU",
+      "status": "Active",
+      "unit": "m³",
+      "source_reference": "Ruel_Concrete_Master_Summary_Prices.xlsm · MASTER SUMMARY row 27 · 30F1!B4:B6"
+    },
+    {
+      "reference_code": "30F1GU14N",
+      "description": "30MPa Non Air 14mm",
+      "summary_description": "30MPa Non Air 14mm",
+      "status": "Active",
+      "unit": "m³",
+      "source_reference": "Ruel_Concrete_Master_Summary_Prices.xlsm · MASTER SUMMARY row 28 · 30F1GU14N!B4:B6"
+    },
+    {
+      "reference_code": "30F1GUL20N",
+      "description": "30MPa Non Air, Interior Slab",
+      "summary_description": "30MPa Non Air, Interior Slab",
+      "status": "Active",
+      "unit": "m³",
+      "source_reference": "Ruel_Concrete_Master_Summary_Prices.xlsm · MASTER SUMMARY row 29 · 30F1GUL20N!B4:B6"
+    },
+    {
+      "reference_code": "30F1HS14",
+      "description": "30MPa Interior Non Air 14mm",
+      "summary_description": "30MPa Interior Non Air 14mm",
+      "status": "Active",
+      "unit": "m³",
+      "source_reference": "Ruel_Concrete_Master_Summary_Prices.xlsm · MASTER SUMMARY row 30 · 30F1HS14!B4:B6"
+    },
+    {
+      "reference_code": "30F1HS20HC",
+      "description": "30MPa Interior Slab with HardCem Mix",
+      "summary_description": "30MPa Interior Slab with HardCem Mix",
+      "status": "Active",
+      "unit": "m³",
+      "source_reference": "Ruel_Concrete_Master_Summary_Prices.xlsm · MASTER SUMMARY row 31 · 30F1HS20HC!B4:B6"
+    },
+    {
+      "reference_code": "30F1SRA14A",
+      "description": "30Mpa, SRA, WP",
+      "summary_description": "30Mpa, SRA, WP",
+      "status": "Active",
+      "unit": "m³",
+      "source_reference": "Ruel_Concrete_Master_Summary_Prices.xlsm · MASTER SUMMARY row 32 · 30F1SRA14A!B4:B6"
+    },
+    {
+      "reference_code": "30S2HS20A",
+      "description": "30 MPa Slab 5-8%",
+      "summary_description": "30 MPa Slab 5-8%",
+      "status": "Active",
+      "unit": "m³",
+      "source_reference": "Ruel_Concrete_Master_Summary_Prices.xlsm · MASTER SUMMARY row 33 · 30S2HS20A!B4:B6"
+    },
+    {
+      "reference_code": "30Slab",
+      "description": "30MPa Type 50, Exterior",
+      "summary_description": "30MPa Type 50, Exterior",
+      "status": "Active",
+      "unit": "m³",
+      "source_reference": "Ruel_Concrete_Master_Summary_Prices.xlsm · MASTER SUMMARY row 34 · 30Slab!B4:B6"
+    },
+    {
+      "reference_code": "32I0EXP",
+      "description": "32 MPA 5-8% Exposed Aggregate",
+      "summary_description": "32 MPA 5-8% Exposed Aggregate",
+      "status": "Active",
+      "unit": "m³",
+      "source_reference": "Ruel_Concrete_Master_Summary_Prices.xlsm · MASTER SUMMARY row 35 · 32I0EXP!B4:B6"
+    },
+    {
+      "reference_code": "32C1-PP",
+      "description": "32MPA @28 DAY 5-8%",
+      "summary_description": "32MPA @28 DAY 5-8%",
+      "status": "Active",
+      "unit": "m³",
+      "source_reference": "Ruel_Concrete_Master_Summary_Prices.xlsm · MASTER SUMMARY row 36 · 32C1-PP!B4:B6"
+    },
+    {
+      "reference_code": "32C1GU20A",
+      "description": "32MPa, 5-8%, Exterior Concrete",
+      "summary_description": "32MPa, 5-8%, Exterior Concrete/32C1GU20A",
+      "status": "Active",
+      "unit": "m³",
+      "source_reference": "Ruel_Concrete_Master_Summary_Prices.xlsm · MASTER SUMMARY row 37 · 32C1GU20A!B4:B6"
+    },
+    {
+      "reference_code": "32C2",
+      "description": "32Mpa C2 5-8%",
+      "summary_description": "32Mpa C2 5-8%",
+      "status": "Active",
+      "unit": "m³",
+      "source_reference": "Ruel_Concrete_Master_Summary_Prices.xlsm · MASTER SUMMARY row 38 · 32C2!B4:B6"
+    },
+    {
+      "reference_code": "32C2-Curb",
+      "description": "32 Mpa Curb mix",
+      "summary_description": "32 Mpa Curb mix",
+      "status": "Active",
+      "unit": "m³",
+      "source_reference": "Ruel_Concrete_Master_Summary_Prices.xlsm · MASTER SUMMARY row 39 · 32C2-Curb!B4:B6"
+    },
+    {
+      "reference_code": "32D1",
+      "description": "32 MPa, 4-7%, 20mm, HSb",
+      "summary_description": "32 MPa, 4-7%, 20mm, HSb",
+      "status": "Active",
+      "unit": "m³",
+      "source_reference": "Ruel_Concrete_Master_Summary_Prices.xlsm · MASTER SUMMARY row 40 · 32D1!B4:B6"
+    },
+    {
+      "reference_code": "32F1GU20NA",
+      "description": "32 MPa, Class N, Non Air S.O.G.",
+      "summary_description": "32 MPa, Class N, Non Air S.O.G.",
+      "status": "Active",
+      "unit": "m³",
+      "source_reference": "Ruel_Concrete_Master_Summary_Prices.xlsm · MASTER SUMMARY row 41 · 32F1GU20NA!B4:B6"
+    },
+    {
+      "reference_code": "32MPA14",
+      "description": "32MPA 14mm ICF 4-7%",
+      "summary_description": "32MPA 14mm ICF 4-7%",
+      "status": "Active",
+      "unit": "m³",
+      "source_reference": "Ruel_Concrete_Master_Summary_Prices.xlsm · MASTER SUMMARY row 42 · 32MPA14!B4:B6"
+    },
+    {
+      "reference_code": "32MPA14mm",
+      "description": "32MPA, 14mm, NA",
+      "summary_description": "32MPA, 14mm, NA",
+      "status": "Active",
+      "unit": "m³",
+      "source_reference": "Ruel_Concrete_Master_Summary_Prices.xlsm · MASTER SUMMARY row 43 · 32MPA14mm!B4:B6"
+    },
+    {
+      "reference_code": "32S2",
+      "description": "32Mpa S2 5-8%",
+      "summary_description": "32Mpa S2 5-8%",
+      "status": "Active",
+      "unit": "m³",
+      "source_reference": "Ruel_Concrete_Master_Summary_Prices.xlsm · MASTER SUMMARY row 44 · 32S2!B4:B6"
+    },
+    {
+      "reference_code": "32S2HS20A+",
+      "description": "32MPA, 5-8%",
+      "summary_description": "32MPA, 5-8%",
+      "status": "Active",
+      "unit": "m³",
+      "source_reference": "Ruel_Concrete_Master_Summary_Prices.xlsm · MASTER SUMMARY row 45 · 32S2HS20A+!B4:B6"
+    },
+    {
+      "reference_code": "32S2HS20A1",
+      "description": "32MPa, HS, 5-8%, 20mm",
+      "summary_description": "32MPa, HS, 5-8%, 20mm",
+      "status": "Active",
+      "unit": "m³",
+      "source_reference": "Ruel_Concrete_Master_Summary_Prices.xlsm · MASTER SUMMARY row 46 · 32S2HS20A1!B4:B6"
+    },
+    {
+      "reference_code": "32S2HS20AC",
+      "description": "32MPa, HS, 5-8%, 100+-30mm",
+      "summary_description": "32MPa, HS, 5-8%, 100+-30mm",
+      "status": "Active",
+      "unit": "m³",
+      "source_reference": "Ruel_Concrete_Master_Summary_Prices.xlsm · MASTER SUMMARY row 47 · 32S2HS20AC!B4:B6"
+    },
+    {
+      "reference_code": "32S2HS20AL",
+      "description": "32MPa HS 5-8% 20mm",
+      "summary_description": "32MPa HS 5-8% 20mm",
+      "status": "Active",
+      "unit": "m³",
+      "source_reference": "Ruel_Concrete_Master_Summary_Prices.xlsm · MASTER SUMMARY row 48 · 32S2HS20AL!B4:B6"
+    },
+    {
+      "reference_code": "35C1-14",
+      "description": "35 MPa, GU, 14mm, 5-8%",
+      "summary_description": "35 MPa, GU, 14mm, 5-8%",
+      "status": "Active",
+      "unit": "m³",
+      "source_reference": "Ruel_Concrete_Master_Summary_Prices.xlsm · MASTER SUMMARY row 49 · 35C1-14!B4:B6"
+    },
+    {
+      "reference_code": "35C1-AT",
+      "description": "35MPA 5-8% AT Spec",
+      "summary_description": "35MPA 5-8% AT Spec",
+      "status": "Active",
+      "unit": "m³",
+      "source_reference": "Ruel_Concrete_Master_Summary_Prices.xlsm · MASTER SUMMARY row 50 · 35C1-AT!B4:B6"
+    },
+    {
+      "reference_code": "35C1-ATEC",
+      "description": "35MPA C-1 EPMS",
+      "summary_description": "35MPA C-1 EPMS",
+      "status": "Active",
+      "unit": "m³",
+      "source_reference": "Ruel_Concrete_Master_Summary_Prices.xlsm · MASTER SUMMARY row 51 · 35C1-ATEC!B4:B6"
+    },
+    {
+      "reference_code": "35C1GU20A",
+      "description": "35 MPa HS 5-8% 20mm",
+      "summary_description": "35 MPa HS 5-8% 20mm",
+      "status": "Active",
+      "unit": "m³",
+      "source_reference": "Ruel_Concrete_Master_Summary_Prices.xlsm · MASTER SUMMARY row 52 · 35C1GU20A!B4:B6"
+    },
+    {
+      "reference_code": "35C1GU20A-T1",
+      "description": "35MPa 5-8% 20mm TRIAL 150-150",
+      "summary_description": "35MPa 5-8% 20mm TRIAL 150-150",
+      "status": "Active",
+      "unit": "m³",
+      "source_reference": "Ruel_Concrete_Master_Summary_Prices.xlsm · MASTER SUMMARY row 53 · 35C1GU20A-T1!B4:B6"
+    },
+    {
+      "reference_code": "35C1LB",
+      "description": "35MPA Light Base 5-8%",
+      "summary_description": "35MPA Light Base 5-8%",
+      "status": "Active",
+      "unit": "m³",
+      "source_reference": "Ruel_Concrete_Master_Summary_Prices.xlsm · MASTER SUMMARY row 54 · 35C1LB!B4:B6"
+    },
+    {
+      "reference_code": "35C1MLH",
+      "description": "35Mpa 5-8% LH",
+      "summary_description": "35Mpa 5-8% LH",
+      "status": "Active",
+      "unit": "m³",
+      "source_reference": "Ruel_Concrete_Master_Summary_Prices.xlsm · MASTER SUMMARY row 55 · 35C1MLH!B4:B6"
+    },
+    {
+      "reference_code": "35C1SCC",
+      "description": "35MPa, SCC, 5-8%, 14mm",
+      "summary_description": "35MPa, SCC, 5-8%, 14mm",
+      "status": "Active",
+      "unit": "m³",
+      "source_reference": "Ruel_Concrete_Master_Summary_Prices.xlsm · MASTER SUMMARY row 56 · 35C1SCC!B4:B6"
+    },
+    {
+      "reference_code": "35C1SCCHL",
+      "description": "35MPa, GU, 14mm, 5-8% SCC",
+      "summary_description": "35MPa, GU, 14mm, 5-8% SCC",
+      "status": "Active",
+      "unit": "m³",
+      "source_reference": "Ruel_Concrete_Master_Summary_Prices.xlsm · MASTER SUMMARY row 57 · 35C1SCCHL!B4:B6"
+    },
+    {
+      "reference_code": "35F1-20",
+      "description": "35MPa Non-air 20mm",
+      "summary_description": "35MPa Non-air 20mm",
+      "status": "Active",
+      "unit": "m³",
+      "source_reference": "Ruel_Concrete_Master_Summary_Prices.xlsm · MASTER SUMMARY row 58 · 35F1-20!B4:B6"
+    },
+    {
+      "reference_code": "35S1HS20A",
+      "description": "35MPa 5-8% HS",
+      "summary_description": "35MPa 5-8% HS",
+      "status": "Active",
+      "unit": "m³",
+      "source_reference": "Ruel_Concrete_Master_Summary_Prices.xlsm · MASTER SUMMARY row 59 · 35S1HS20A!B4:B6"
+    },
+    {
+      "reference_code": "35SCHS10A",
+      "description": "35MPa Shotcrete Mix 10mm 4-7%",
+      "summary_description": "35MPa Shotcrete Mix 10mm 4-7%",
+      "status": "Active",
+      "unit": "m³",
+      "source_reference": "Ruel_Concrete_Master_Summary_Prices.xlsm · MASTER SUMMARY row 60 · 35SCHS10A!B4:B6"
+    },
+    {
+      "reference_code": "45C1ATLH",
+      "description": "45 MPA @ 28 DAY 5-8% LH",
+      "summary_description": "45 MPA @ 28 DAY 5-8% LH",
+      "status": "Active",
+      "unit": "m³",
+      "source_reference": "Ruel_Concrete_Master_Summary_Prices.xlsm · MASTER SUMMARY row 61 · 45C1ATLH!B4:B6"
+    },
+    {
+      "reference_code": "45HPC-AT",
+      "description": "45Mpa @ 28 DAYS, GU, 5-8%, 20mm",
+      "summary_description": "45Mpa @ 28 DAYS, GU, 5-8%, 20mm",
+      "status": "Active",
+      "unit": "m³",
+      "source_reference": "Ruel_Concrete_Master_Summary_Prices.xlsm · MASTER SUMMARY row 62 · 45HPC-AT!B4:B6"
+    },
+    {
+      "reference_code": "45MPa-ATEC",
+      "description": "H45MPa-ATEC Class HPC",
+      "summary_description": "H45MPa-ATEC Class HPC",
+      "status": "Active",
+      "unit": "m³",
+      "source_reference": "Ruel_Concrete_Master_Summary_Prices.xlsm · MASTER SUMMARY row 63 · 45MPa-ATEC!B4:B6"
+    },
+    {
+      "reference_code": "65C1-AT",
+      "description": "65 MPA @ 28 days 5-8% - AT",
+      "summary_description": "65 MPA @ 28 days 5-8% - AT",
+      "status": "Active",
+      "unit": "m³",
+      "source_reference": "Ruel_Concrete_Master_Summary_Prices.xlsm · MASTER SUMMARY row 64 · 65C1-AT!B4:B6"
+    },
+    {
+      "reference_code": "CFA-30C107",
+      "description": "30MPa @ 7 DAY GU 5-8% CFA 14mm",
+      "summary_description": "30MPa @ 7 DAY GU 5-8% CFA 14mm",
+      "status": "Active",
+      "unit": "m³",
+      "source_reference": "Ruel_Concrete_Master_Summary_Prices.xlsm · MASTER SUMMARY row 65 · CFA-30C107!B4:B6"
+    },
+    {
+      "reference_code": "CFA-32D7",
+      "description": "32MPA, 4-7%, SR, 14mm",
+      "summary_description": "32MPA, 4-7%, SR, 14mm",
+      "status": "Active",
+      "unit": "m³",
+      "source_reference": "Ruel_Concrete_Master_Summary_Prices.xlsm · MASTER SUMMARY row 66 · CFA-32D7!B4:B6"
+    },
+    {
+      "reference_code": "Corexcel",
+      "description": "MIX #4 - 40MPA",
+      "summary_description": "MIX #4 - 40MPA",
+      "status": "Active",
+      "unit": "m³",
+      "source_reference": "Ruel_Concrete_Master_Summary_Prices.xlsm · MASTER SUMMARY row 67 · Corexcel!B4:B6"
+    },
+    {
+      "reference_code": "fc0.2",
+      "description": "0.2 MPA City Fillcrete 6-9%",
+      "summary_description": "0.2 MPA City Fillcrete 6-9%",
+      "status": "Active",
+      "unit": "m³",
+      "source_reference": "Ruel_Concrete_Master_Summary_Prices.xlsm · MASTER SUMMARY row 68 · fc0.2!B4:B6"
+    },
+    {
+      "reference_code": "FC0.2P",
+      "description": ".2MPA PUMP 6-9%AIR",
+      "summary_description": ".2MPA PUMP 6-9%AIR",
+      "status": "Active",
+      "unit": "m³",
+      "source_reference": "Ruel_Concrete_Master_Summary_Prices.xlsm · MASTER SUMMARY row 69 · FC0.2P!B4:B6"
+    },
+    {
+      "reference_code": "FC0.4P",
+      "description": "0.4MPa Pumpable/Flowable Fillcrete",
+      "summary_description": "0.4MPa Pumpable/Flowable Fillcrete",
+      "status": "Active",
+      "unit": "m³",
+      "source_reference": "Ruel_Concrete_Master_Summary_Prices.xlsm · MASTER SUMMARY row 70 · FC0.4P!B4:B6"
+    },
+    {
+      "reference_code": "FC10P",
+      "description": "10MPA FILLCRETE 4-9%",
+      "summary_description": "10MPA FILLCRETE 4-9%",
+      "status": "Active",
+      "unit": "m³",
+      "source_reference": "Ruel_Concrete_Master_Summary_Prices.xlsm · MASTER SUMMARY row 71 · FC10P!B4:B6"
+    },
+    {
+      "reference_code": "FC2",
+      "description": "2MPa Fillcrete 4-9%",
+      "summary_description": "2MPa Fillcrete 4-9%",
+      "status": "Active",
+      "unit": "m³",
+      "source_reference": "Ruel_Concrete_Master_Summary_Prices.xlsm · MASTER SUMMARY row 72 · FC2!B4:B6"
+    },
+    {
+      "reference_code": "FC3",
+      "description": "3MPa Fillcrete 6-9%",
+      "summary_description": "3MPa Fillcrete 6-9%",
+      "status": "Active",
+      "unit": "m³",
+      "source_reference": "Ruel_Concrete_Master_Summary_Prices.xlsm · MASTER SUMMARY row 73 · FC3!B4:B6"
+    },
+    {
+      "reference_code": "FC3P",
+      "description": "3MPA PUMPABLE FILLCRETE 4-9% AIR",
+      "summary_description": "3MPA PUMPABLE FILLCRETE 4-9% AIR",
+      "status": "Active",
+      "unit": "m³",
+      "source_reference": "Ruel_Concrete_Master_Summary_Prices.xlsm · MASTER SUMMARY row 74 · FC3P!B4:B6"
+    },
+    {
+      "reference_code": "FC5",
+      "description": "5MPa Fillcrete 4-9%",
+      "summary_description": "5MPa Fillcrete 4-9%",
+      "status": "Active",
+      "unit": "m³",
+      "source_reference": "Ruel_Concrete_Master_Summary_Prices.xlsm · MASTER SUMMARY row 75 · FC5!B4:B6"
+    },
+    {
+      "reference_code": "FC5P",
+      "description": "5 MPA PUMPABLE FILLCRETE4-9%",
+      "summary_description": "5 MPA PUMPABLE FILLCRETE4-9%",
+      "status": "Active",
+      "unit": "m³",
+      "source_reference": "Ruel_Concrete_Master_Summary_Prices.xlsm · MASTER SUMMARY row 76 · FC5P!B4:B6"
+    },
+    {
+      "reference_code": "GR20G21F",
+      "description": "20MPA AIR GROUT",
+      "summary_description": "20MPA AIR GROUT",
+      "status": "Active",
+      "unit": "m³",
+      "source_reference": "Ruel_Concrete_Master_Summary_Prices.xlsm · MASTER SUMMARY row 77 · GR20G21F!B4:B6"
+    },
+    {
+      "reference_code": "GR25G25F",
+      "description": "25MPA HS GROUT",
+      "summary_description": "25MPA HS GROUT",
+      "status": "Active",
+      "unit": "m³",
+      "source_reference": "Ruel_Concrete_Master_Summary_Prices.xlsm · MASTER SUMMARY row 78 · GR25G25F!B4:B6"
+    },
+    {
+      "reference_code": "GR25S",
+      "description": "25MPA Type S W/AIR",
+      "summary_description": "25MPA Type S W/AIR",
+      "status": "Active",
+      "unit": "m³",
+      "source_reference": "Ruel_Concrete_Master_Summary_Prices.xlsm · MASTER SUMMARY row 79 · GR25S!B4:B6"
+    },
+    {
+      "reference_code": "GR2TRIS",
+      "description": "10Mpa Pumpable Grout",
+      "summary_description": "10Mpa Pumpable Grout",
+      "status": "Active",
+      "unit": "m³",
+      "source_reference": "Ruel_Concrete_Master_Summary_Prices.xlsm · MASTER SUMMARY row 80 · GR2TRIS!B4:B6"
+    }
+  ]
+}

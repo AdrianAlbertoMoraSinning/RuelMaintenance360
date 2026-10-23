@@ -39,3 +39,5 @@ test('future ready loads never auto-depart while another delivery is active, eve
  const next={...load,id:'next',load_number:2};assert.deepEqual(model.locationLoads([load,next],'driver').map(l=>l.id),['load']);
  assert.deepEqual(model.locationLoads([{...load,status:'departed',site_zone:null},next],'driver'),[]);
 });
+
+test('planned departure order drives GPS load selection even if assignments were created out of sequence',()=>{const late={...load,id:'late',load_number:1,planned_departure_at:'2026-10-24T16:00Z'},early={...load,id:'early',load_number:2,planned_departure_at:'2026-10-24T14:00Z'};assert.deepEqual(model.locationLoads([late,early],'driver').map(l=>l.id),['early']);assert.deepEqual(model.locationLoads([{...late,status:'departed'},early],'driver').map(l=>l.id),['late'])})

@@ -2,7 +2,7 @@ import type {ProductionLoad} from './production'
 export type DeliveryZone={latitude:number;longitude:number;radius_m:number}
 export function locationLoads(loads:ProductionLoad[],userId:string,now=Date.now()){
  const own=loads.filter(l=>l.driver_id===userId)
- const primary=own.filter(l=>['ready','departed','arrived'].includes(l.status)).sort((a,b)=>{const rank=(l:ProductionLoad)=>l.status==='ready'?1:0;return rank(a)-rank(b)||a.load_number-b.load_number})[0]
+ const primary=own.filter(l=>['ready','departed','arrived'].includes(l.status)).sort((a,b)=>{const rank=(l:ProductionLoad)=>l.status==='ready'?1:0;return rank(a)-rank(b)||(Date.parse(a.planned_departure_at||'')||Number.MAX_SAFE_INTEGER)-(Date.parse(b.planned_departure_at||'')||Number.MAX_SAFE_INTEGER)||a.load_number-b.load_number})[0]
  const result:ProductionLoad[]=[]
  if(primary&&((primary.status==='ready'&&primary.plant_zone)||(['departed','arrived'].includes(primary.status)&&primary.site_zone&&!primary.left_site_at)))result.push(primary)
  // A driver can confirm completion before leaving; GPS exit remains independent.

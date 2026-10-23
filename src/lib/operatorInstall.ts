@@ -5,8 +5,9 @@ if(typeof window!=='undefined')window.addEventListener('beforeinstallprompt',e=>
 export function currentInstallPrompt(){return pending}
 export function clearInstallPrompt(){pending=null;subscribers.forEach(fn=>fn())}
 export function subscribeInstallPrompt(fn:()=>void){subscribers.add(fn);return()=>{subscribers.delete(fn)}}
-export function enableOperatorInstall(){
- const manifest=document.querySelector<HTMLLinkElement>('link[rel="manifest"]');if(manifest)manifest.href='/operator.webmanifest'
- document.title='RUEL Operators'
- document.querySelector('meta[name="apple-mobile-web-app-title"]')?.setAttribute('content','RUEL Operators')
+export function enableOperatorInstall(audience:'operator'|'driver'='operator'){
+ const name=audience==='driver'?'RUEL Drivers':'RUEL Operators'
+ const manifest=document.querySelector<HTMLLinkElement>('link[rel="manifest"]');if(manifest)manifest.href=audience==='driver'?'/driver.webmanifest':'/operator.webmanifest'
+ document.title=name
+ document.querySelector('meta[name="apple-mobile-web-app-title"]')?.setAttribute('content',name)
 }

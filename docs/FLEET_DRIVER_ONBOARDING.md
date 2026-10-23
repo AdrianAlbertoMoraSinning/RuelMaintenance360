@@ -1,0 +1,13 @@
+# Driver accounts · 0.3.7
+
+In Administration → Create / invite user, select system role Driver, enter personal email/name and choose an active Reporting Manager. The Driver category and Fleet Driver position are suggested. Saving the profile automatically enrolls the active account in Peace River Mobile Concrete Fleet with operational unit role driver, no operational-edit authority and no completion-approval authority. The active driver is then available in Production & Dispatch's assignment dropdown without a second enrollment step.
+
+For an existing account, first assign its direct Reporting Manager, then change System role to Driver. The same automatic fleet setup applies. Legacy manually enrolled technician/operator drivers remain supported and are not silently converted. Disabling a Driver profile disables its fleet enrollment; reactivating restores enrollment. Changing a Driver system role to another role disables that automatic enrollment.
+
+Super Admin can open Manage → Resend app invitation for personal access recovery and installation instructions. Driver invitations follow the existing non-operator personal-email process and manual-link fallback; no SMS is sent. Account creation still uses the existing Auth invitation mechanism, so provider configuration/rate limits apply. The driver signs in using their own account and confirms installation on the phone.
+
+Driver accounts open directly into My deliveries. A RUEL Drivers installation entry supports iPhone/Android browser installation with device confirmation. The simple app also provides Field Observations, My To-do, Alerts and About. It does not present corporate maintenance/production administration navigation. The assigned load has existing depart/arrive/complete controls, evidence and customer receipt signature capture.
+
+Reporting hierarchy remains enforced. Supervisors can assign tasks to their direct Driver reports; drivers do not gain delegation authority. Field reports route to the configured direct manager. Delivery read/write checks still require active enrollment, Fleet unit access and the actual assigned driver's account. Enrollment grants no authority over other drivers' orders.
+
+Database rollback tests cover automatic profile defaults/enrollment, least-privilege unit scope, supervisor task eligibility, driver workspace visibility, field report routing, deactivation/reactivation and role changes. Edge-handler tests mock invitation delivery and cover valid onboarding, unauthorized callers and missing/inactive managers. No real accounts or invitations were created during QA. Physical device installation remains a pilot check.

@@ -32,7 +32,7 @@ test('installed app launch stays reusable and never stores an activation token o
 })
 
 test('all non-operator profiles receive private recovery and installation instructions without account changes',async()=>{
- for(const targetRole of ['super_admin','it_admin','corporate_manager','ohs_admin','unit_supervisor','technician','viewer']){
+ for(const targetRole of ['super_admin','it_admin','corporate_manager','ohs_admin','unit_supervisor','technician','driver','viewer']){
   const h=fixture({targetRole}),response=await h.send('resend_app_invitation'),body=await response.json()
   assert.equal(response.status,200,JSON.stringify(body));assert.equal(body.email_sent,true)
   assert.deepEqual(h.emails[0].to,['user@ruelconcreteltd.com']);assert.equal(h.emails[0].cc,undefined)

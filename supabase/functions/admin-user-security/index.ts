@@ -11,8 +11,8 @@ const cors={
   'Access-Control-Allow-Methods':'POST, OPTIONS',
   'Content-Type':'application/json'
 }
-const roles=['super_admin','it_admin','corporate_manager','ohs_admin','unit_supervisor','technician','operator','viewer']
-const categories=['ceo','shareholder','manager','supervisor','operator','technician','administration','other']
+const roles=['super_admin','it_admin','corporate_manager','ohs_admin','unit_supervisor','technician','operator','driver','viewer']
+const categories=['ceo','shareholder','manager','supervisor','operator','technician','driver','administration','other']
 
 Deno.serve(async (req)=>{
   if(req.method==='OPTIONS') return new Response('ok',{headers:cors})
@@ -139,7 +139,7 @@ Deno.serve(async (req)=>{
       if(inviteError) throw inviteError
       const newId=invited.user?.id
       if(!newId) throw new Error('Unable to create invited user')
-      const {error:profileError}=await admin.from('profiles').upsert({id:newId,email,full_name:fullName,role,personnel_category:role==='ohs_admin'?'administration':category,position_title:role==='ohs_admin'?(positionTitle||'OHS Administrator'):positionTitle,corporate_manager_id:managerId,active:true},{onConflict:'id'})
+      const {error:profileError}=await admin.from('profiles').upsert({id:newId,email,full_name:fullName,role,personnel_category:role==='driver'?'driver':role==='ohs_admin'?'administration':category,position_title:role==='ohs_admin'?(positionTitle||'OHS Administrator'):positionTitle,corporate_manager_id:managerId,active:true},{onConflict:'id'})
       if(profileError) throw profileError
       await admin.from('admin_security_events').insert({actor_user_id:user.id,target_user_id:newId,action:role==='ohs_admin'?'ohs_administrator_invited':'user_invited'})
       return new Response(JSON.stringify({ok:true,user_id:newId}),{headers:cors})
@@ -183,7 +183,7 @@ Deno.serve(async (req)=>{
       const patch:any={}
       if('full_name' in body) patch.full_name=String(body.full_name||'').trim()||null
       if('position_title' in body) patch.position_title=String(body.position_title||'').trim()||null
-      if('role' in body){const v=String(body.role);if(!roles.includes(v)) return new Response(JSON.stringify({error:'Invalid role'}),{status:400,headers:cors});patch.role=v;if(v==='ohs_admin'){patch.personnel_category='administration';if(!('position_title' in body))patch.position_title='OHS Administrator'}}
+      if('role' in body){const v=String(body.role);if(!roles.includes(v)) return new Response(JSON.stringify({error:'Invalid role'}),{status:400,headers:cors});patch.role=v;if(v==='driver'){patch.personnel_category='driver';if(!('position_title' in body))patch.position_title='Fleet Driver'}if(v==='ohs_admin'){patch.personnel_category='administration';if(!('position_title' in body))patch.position_title='OHS Administrator'}}
       if('personnel_category' in body){const v=String(body.personnel_category);if(!categories.includes(v)) return new Response(JSON.stringify({error:'Invalid personnel category'}),{status:400,headers:cors});patch.personnel_category=v}
       if('avatar_url' in body) patch.avatar_url=body.avatar_url?String(body.avatar_url):null
       if('corporate_manager_id' in body){const managerId=body.corporate_manager_id?String(body.corporate_manager_id):null;if(managerId===targetUserId)return new Response(JSON.stringify({error:'A user cannot be their own manager'}),{status:400,headers:cors});if(managerId){const {data:mgr}=await admin.from('profiles').select('id,active,role').eq('id',managerId).single();if(!mgr?.active||!['corporate_manager','super_admin','unit_supervisor'].includes(mgr.role))return new Response(JSON.stringify({error:'Reporting Manager must be an active Supervisor, Corporate Manager, or Super Admin'}),{status:400,headers:cors})}patch.corporate_manager_id=managerId}
