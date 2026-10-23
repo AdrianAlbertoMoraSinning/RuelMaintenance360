@@ -1,0 +1,5 @@
+export function isConnectionError(error:unknown){const s=error instanceof Error?error.message:typeof error==='object'&&error?String((error as {message?:unknown}).message||''):String(error||'');return /failed to fetch|fetch failed|networkerror|network request failed|load failed|connection.*(lost|reset)|timeout/i.test(s)}
+export function productionError(error:unknown){return isConnectionError(error)?'Connection interrupted. Your entries remain on this screen. Reconnect and retry; do not create another order.':error instanceof Error?error.message:typeof error==='object'&&error&&'message' in error?String(error.message):'Unable to complete this request.'}
+export async function retryProductionRequest<T extends {error?:{message?:string}|null}>(send:()=>PromiseLike<T>,safeToRetry:boolean,pause:(ms:number)=>Promise<void>=ms=>new Promise(r=>setTimeout(r,ms))):Promise<T>{
+ for(let attempt=0;;attempt++){try{const r=await send();if(attempt===0&&safeToRetry&&r.error&&isConnectionError(r.error)){await pause(400);continue}return r}catch(e){if(attempt===0&&safeToRetry&&isConnectionError(e)){await pause(400);continue}throw e}}
+}
