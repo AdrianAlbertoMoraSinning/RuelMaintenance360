@@ -7,7 +7,7 @@ do $$
 declare creator uuid:=auth.uid();manager uuid;unit uuid;fleet uuid;driver uuid;truck uuid;cust uuid;site uuid;prod uuid;ord uuid;lid uuid;lid2 uuid;token text;newtoken text;key uuid:=gen_random_uuid();departure_key uuid:=gen_random_uuid();bad boolean;response jsonb;
 begin
  select id into strict manager from public.profiles where email='concrete@ruelconcreteltd.com' and active;
- select id into strict unit from public.business_units where code='CONC-PR';select id into strict fleet from public.business_units where code='MOBILE-PR';
+ select id into strict unit from public.business_units where code='CONC-PR';select id into strict fleet from public.business_units where code='CONC-PR';
  select p.id into strict driver from public.profiles p join public.user_unit_access a on a.user_id=p.id where p.active and p.full_name like '[MOC]%' and a.business_unit_id=fleet and not exists(select 1 from public.production_loads busy where busy.driver_id=p.id and busy.status in ('departed','arrived')) order by p.full_name limit 1;
  perform public.production_command('driver',jsonb_build_object('business_unit_id',fleet,'user_id',driver));
  truck:=public.create_asset_with_parts(jsonb_build_object('business_unit_id',fleet,'responsible_user_id',driver,'asset_code','QA-MANUAL-'||gen_random_uuid(),'name','QA rollback manual truck','asset_category','MIXER_TRUCK'),'[]'::jsonb);

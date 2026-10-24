@@ -22,7 +22,7 @@ begin
  failed:=false;begin perform public.production_geofence('plant_zone',jsonb_build_object('actor_id',guy,'business_unit_id',u,'latitude',91,'longitude',-117,'radius_m',150));exception when raise_exception then failed:=true;end;if not failed then raise exception 'Invalid coordinates accepted';end if;
  o:=(public.production_command('order',jsonb_build_object('business_unit_id',u,'customer_id',c,'site_id',s,'product_id',p,'quantity',8,'due_at',now()+interval '1 day'))->>'id')::uuid;
  perform public.production_command('driver',jsonb_build_object('business_unit_id',fleet,'user_id',driver));
- select id into t from public.assets where business_unit_id=fleet and status='active' limit 1;
+ select id into t from public.assets where business_unit_id=fleet and status='active' and asset_category in ('MIXER_TRUCK','VOLUMETRIC_TRUCK','CONCRETE_PUMP','TRUCK','VEHICLE') limit 1;
  l:=(public.production_command('schedule',jsonb_build_object('order_id',o,'fleet_unit_id',fleet,'driver_id',driver,'truck_id',t,'quantity',8))->>'id')::uuid;
  token:=public.production_command('tracking',jsonb_build_object('order_id',o))->>'token';
  perform set_config('request.jwt.claim.sub',driver::text,true);

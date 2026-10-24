@@ -9,3 +9,18 @@ test('external reference changes do not change internal identifiers or service t
 test('cancelling an unshipped order does not erase production already recorded',()=>{const m=productionMetrics([{id:'a',business_unit_id:'plant',unit:'m³',status:'cancelled',due_at:'2099-01-01'}],[{id:'1',order_id:'a',quantity:8,status:'cancelled',produced_at:'2026-10-22T15:00Z'}],'plant','2026-10-22');assert.equal(m.quantities['m³'].produced,8);assert.equal(m.quantities['m³'].dispatched,0);assert.equal(m.pending,0)});
 
 test('order dispatch display reflects physical departures and preserves partial quantities',async()=>{const {dispatchStatus}=await import('../src/lib/production.ts');const order={id:'o',quantity:20,status:'confirmed'};const load={order_id:'o',quantity:7,status:'departed',departed_at:'2026-10-23T15:00Z'};assert.equal(dispatchStatus(order,[]),'confirmed');assert.equal(dispatchStatus(order,[{...load,departed_at:null,status:'ready'}]),'confirmed');assert.equal(dispatchStatus(order,[load]),'partially dispatched');assert.equal(dispatchStatus(order,[load,{...load,quantity:13}]),'dispatched');assert.equal(dispatchStatus({...order,status:'completed'},[load]),'completed')})
+
+
+test('performance range includes Alberta boundary dates and attributes milestones to their own days',()=>{
+ const orders=[{id:'a',business_unit_id:'plant',unit:'m³',quantity:20,status:'confirmed'}];
+ const loads=[{id:'1',order_id:'a',fleet_unit_id:'fleet',quantity:8,status:'completed',produced_at:'2026-10-22T05:59:00Z',departed_at:'2026-10-22T06:00:00Z',completed_at:'2026-10-24T05:59:00Z'}, {id:'2',order_id:'a',fleet_unit_id:'fleet',quantity:9,status:'completed',produced_at:'2026-10-23T06:00:00Z',departed_at:'2026-10-24T06:00:00Z',completed_at:'2026-10-24T07:00:00Z'}];
+ const m=productionMetrics(orders,loads,'plant','2026-10-22','2026-10-23');assert.deepEqual(m.quantities,{'m³':{produced:9,dispatched:8,delivered:8}});
+ assert.equal(productionMetrics(orders,loads,'fleet','2026-10-22','2026-10-23').fleetCompleted,1);
+ assert.deepEqual(productionMetrics(orders,loads,'plant','2026-11-01','2026-11-02').quantities,{});
+});
+test('closure totals preserve programmed quantities with over and under dispatch, excluding cancellations',async()=>{
+ const {dispatchTotals}=await import('../src/lib/production.ts');const o={id:'a',quantity:20};const load={id:'1',order_id:'a',quantity:18,status:'completed',departed_at:'2026-10-23T15:00Z'};
+ assert.deepEqual(dispatchTotals(o,[load]),{planned:20,assigned:18,dispatched:18,delivered:18,variance:-2,canClose:true});
+ assert.equal(dispatchTotals(o,[{...load,quantity:22}]).variance,2);assert.equal(dispatchTotals(o,[load,{...load,id:'2',status:'ready',departed_at:null}]).canClose,false);
+ assert.equal(dispatchTotals(o,[load,{...load,id:'2',status:'cancelled',quantity:100}]).dispatched,18);
+});

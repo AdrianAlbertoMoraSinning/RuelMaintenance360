@@ -11,7 +11,7 @@ begin
  prod:=(public.production_command('product',jsonb_build_object('business_unit_id',unit,'name','QA concrete','unit','m³','kind','product'))->>'id')::uuid;
  ord:=(public.production_command('order',jsonb_build_object('business_unit_id',unit,'customer_id',cust,'site_id',site,'product_id',prod,'quantity',16,'due_at',now()+interval '1 day','instructions','Internal dispatch instructions'))->>'id')::uuid;
  perform public.production_command('driver',jsonb_build_object('business_unit_id',fleet,'user_id',driver));
- select id into truck from public.assets where business_unit_id=fleet and status='active' limit 1;
+ select id into truck from public.assets where business_unit_id=fleet and status='active' and asset_category in ('MIXER_TRUCK','VOLUMETRIC_TRUCK','CONCRETE_PUMP','TRUCK','VEHICLE') limit 1;
  loadid:=(public.production_command('schedule',jsonb_build_object('order_id',ord,'fleet_unit_id',fleet,'driver_id',driver,'truck_id',truck,'quantity',8))->>'id')::uuid;
  failed:=false;begin perform public.production_command('schedule',jsonb_build_object('order_id',ord,'fleet_unit_id',fleet,'driver_id',driver,'truck_id',truck,'quantity',9));exception when raise_exception then failed:=true;end;if not failed then raise exception 'Over-dispatch permitted';end if;
  perform public.production_command('reference',jsonb_build_object('order_id',ord,'external_number','QA-AM-10458'));

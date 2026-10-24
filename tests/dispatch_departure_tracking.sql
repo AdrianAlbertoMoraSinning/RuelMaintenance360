@@ -7,10 +7,10 @@ do $$
 declare creator uuid:=auth.uid();manager uuid;unit uuid;fleet uuid;driver uuid;truck uuid;cust uuid;site uuid;prod uuid;ord uuid;lid uuid;lid2 uuid;token text;newtoken text;key uuid:=gen_random_uuid();departure_key uuid:=gen_random_uuid();bad boolean;response jsonb;
 begin
  select id into strict manager from public.profiles where email='concrete@ruelconcreteltd.com' and active;
- select id into strict unit from public.business_units where code='CONC-PR';select id into strict fleet from public.business_units where code='MOBILE-PR';
+ select id into strict unit from public.business_units where code='CONC-PR';select id into strict fleet from public.business_units where code='CONC-PR';
  select p.id into strict driver from public.profiles p join public.user_unit_access a on a.user_id=p.id where p.active and p.full_name like '[MOC]%' and a.business_unit_id=fleet limit 1;
  perform public.production_command('driver',jsonb_build_object('business_unit_id',fleet,'user_id',driver));
- select id into strict truck from public.assets where business_unit_id=fleet and status='active' limit 1;
+ select id into strict truck from public.assets where business_unit_id=fleet and status='active' and asset_category in ('MIXER_TRUCK','VOLUMETRIC_TRUCK','CONCRETE_PUMP','TRUCK','VEHICLE') limit 1;
  cust:=(public.production_command('customer',jsonb_build_object('business_unit_id',unit,'name','[QA rollback] Tracking customer'))->>'id')::uuid;
  site:=(public.production_command('site',jsonb_build_object('business_unit_id',unit,'customer_id',cust,'name','QA site','address','QA no real dispatch'))->>'id')::uuid;
  prod:=(public.production_command('product',jsonb_build_object('business_unit_id',unit,'name','QA mix','unit','m³','kind','product'))->>'id')::uuid;

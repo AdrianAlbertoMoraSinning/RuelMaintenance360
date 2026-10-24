@@ -1,3 +1,4 @@
+import {changeUserLifecycle} from '../_shared/userLifecycle.ts'
 import {appInvitationHtml} from '../_shared/appInvitation.ts'
 import {operatorInvitationMode,operatorAccessUrl} from '../_shared/operatorInvitation.ts'
 import {supervisorInvitationRecipients} from '../_shared/invitationRecipients.ts'
@@ -180,15 +181,10 @@ Deno.serve(async (req)=>{
       return new Response(JSON.stringify({ok:true}),{headers:cors})
     }
 
-    if(action==='set_active'){
-      const active=Boolean(body.active)
-      if(targetUserId===user.id&&!active) return new Response(JSON.stringify({error:'You cannot deactivate your own account'}),{status:400,headers:cors})
-      const {error}=await admin.auth.admin.updateUserById(targetUserId,{ban_duration:active?'none':'876000h'})
-      if(error) throw error
-      const {error:profileError}=await admin.from('profiles').update({active}).eq('id',targetUserId)
-      if(profileError) throw profileError
-      await admin.from('admin_security_events').insert({actor_user_id:user.id,target_user_id:targetUserId,action:active?'user_activated':'user_deactivated'})
-      return new Response(JSON.stringify({ok:true}),{headers:cors})
+    if(action==='set_active'||action==='remove_user'){
+      if(action==='set_active'&&typeof body.active!=='boolean')throw new Error('Choose a valid account status')
+      const result=await changeUserLifecycle(admin,user.id,targetUserId,action==='remove_user'?'remove':body.active?'activate':'deactivate',String(body.confirmation||''))
+      return new Response(JSON.stringify(result),{headers:cors})
     }
 
     if(action==='update_personal_details'){

@@ -5,8 +5,8 @@ do $$
 declare target uuid;manager uuid;fleet uuid;ceo uuid:=auth.uid();old_role public.app_role;old_category public.personnel_category;obs uuid;
 begin
  select id into strict manager from public.profiles where active and role='unit_supervisor' and full_name='Don McDonald' limit 1;
- select p.id,p.role,p.personnel_category into strict target,old_role,old_category from public.profiles p join public.user_unit_access a on a.user_id=p.id join public.business_units b on b.id=a.business_unit_id where b.code='MOBILE-PR' and p.active and p.full_name like '[MOC]%' and p.role in ('technician','operator','viewer') and not exists(select 1 from public.profiles child where child.corporate_manager_id=p.id and child.active) limit 1;
- select id into strict fleet from public.business_units where code='MOBILE-PR';
+ select p.id,p.role,p.personnel_category into strict target,old_role,old_category from public.profiles p join public.user_unit_access a on a.user_id=p.id join public.business_units b on b.id=a.business_unit_id where b.code='CONC-PR' and p.active and p.full_name like '[MOC]%' and p.role in ('technician','operator','viewer') and not exists(select 1 from public.profiles child where child.corporate_manager_id=p.id and child.active) limit 1;
+ select id into strict fleet from public.business_units where code='CONC-PR';
  update public.profiles set corporate_manager_id=manager,role='driver',position_title=null where id=target;
  if (select personnel_category from public.profiles where id=target)<>'driver' or (select position_title from public.profiles where id=target)<>'Fleet Driver' then raise exception 'Driver identity defaults missing';end if;
  if not exists(select 1 from public.production_drivers where user_id=target and fleet_unit_id=fleet and active) then raise exception 'Driver not auto-enrolled';end if;
