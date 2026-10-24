@@ -7,3 +7,27 @@
 .delivery-coordinate-map{height:360px;width:100%;border-radius:14px;border:1px solid #cbd9d1;z-index:0}.delivery-map-picker{min-width:0}.delivery-map-picker small{display:block;margin:10px 0}.delivery-map-picker .leaflet-container{font-family:inherit}.production-share-bottom{border:2px solid #167345;background:#f0f8f3;border-radius:16px;padding:20px;margin-top:24px}.production-share-bottom textarea{width:100%;min-height:110px}.production-share-bottom .primary-button{background:#167345;color:#fff}@media(max-width:780px){.delivery-coordinate-map{height:300px}.production-share-bottom{padding:14px}}
 
 .manual-delivery-controls{border:1px solid #b5d5c0;border-left:5px solid #167345;border-radius:12px;padding:16px;margin:16px 0;background:#f0f8f3}.manual-delivery-controls .primary-button{background:#167345;color:#fff}.manual-delivery-controls p{font-size:.92rem}
+
+/* Compact production sidebar for the business-unit workspace. */
+.unit-performance-layout>.production-metrics{margin:0;min-width:0;padding:16px;border-radius:14px}
+.production-metrics-heading h3{font-family:Oswald,sans-serif;font-size:1.3rem;margin:3px 0 12px}
+.production-metrics-heading .eyebrow{color:#477256}
+.production-metrics-range{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-bottom:14px}
+.production-metrics-range label{min-width:0;font-size:.65rem}
+.production-metrics-range input{width:100%;min-width:0;padding:8px 5px;font-size:.75rem;box-sizing:border-box}
+.production-metrics-group{margin-bottom:14px}
+.production-metrics-group h4{font-size:.67rem;text-transform:uppercase;letter-spacing:.05em;color:#526b5b;margin:0 0 7px}
+.production-metrics .production-metric-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;align-items:start}
+.production-metrics .production-metric-grid button{min-width:0;width:100%;padding:10px 8px;min-height:76px;display:flex;flex-direction:column;justify-content:flex-start;gap:4px}
+.production-metrics .production-metric-grid b{font-size:clamp(1rem,1.4vw,1.4rem);line-height:1.2;overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
+.production-metrics .production-metric-grid span{font-size:.63rem;line-height:1.3;overflow-wrap:anywhere}
+.production-quantity-group+.production-quantity-group{margin-top:10px}
+.production-quantity-bars{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin-top:6px}
+.production-quantity-bars small{font-size:.58rem;text-transform:capitalize;color:#526b5b}
+.production-quantity-bars .production-bar{height:5px;margin:4px 0 0}
+.production-metrics-empty{font-size:.75rem;margin:0;padding:12px 0;color:#526b5b}
+.production-metrics-open{width:100%;font-size:.77rem;min-height:40px}
+.production-metrics-help{margin-top:10px;font-size:.64rem;color:#526b5b}
+.production-metrics-help summary{cursor:pointer}
+.production-metrics-help .field-help{font-size:.64rem;margin:8px 0 0}
+@media(max-width:700px){.production-metrics .production-metric-grid button{min-height:88px}.production-metrics-range input{min-height:44px}}
